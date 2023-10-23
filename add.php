@@ -2,80 +2,95 @@
 
 require_once(__DIR__ . "/init.php");
 
-// Get session username
+// Get session username and is admin
 $username = $_SESSION["username"];
+$is_admin = $_SESSION["is_admin"];
+
+// If not admin, throw back to index
+if (!$is_admin) {
+    header("Location: index.php");
+    exit;
+}
 
 $post_req = $_SERVER["REQUEST_METHOD"] === "POST";
 if ($post_req) {
     // Collect POST data
     $name = clean_data($_POST["name"]);
-    $description = $description = $_POST["description"] ? clean_data($_POST["description"]) : null;
-    $date = clean_data($_POST["date"]);
-    $progress = clean_data($_POST["progress"]);
-    $dependent = isset($_POST["dependentTask"]) ? (int) clean_data($_POST["dependentTask"]) : null;
+    $price = clean_data($_POST["price"]);
+    $description = clean_data($_POST["description"]);
+    $category = $_POST["category"];
+    $image_not_empty = isset($_FILES["image"]) && strlen($_FILES["image"]["name"]) > 0;
+    $image = $image_not_empty ? $_FILES["image"] : null;
 
     // Check form validity
-    $valid_name = strlen($name) > 0 && strlen($name) <= TASKNAME_MAX_LENGTH;
-    $valid_description = !$description || strlen($description) <= TASKDESC_MAX_LENGTH;
-    $valid_date = check_date($date);
-    $valid_progress = in_array($progress, TASK_PROGRESS) && $progress !== "Completed";
-    $valid_dependent = (!$dependent && $progress !== "Waiting on") || is_int($dependent);
-    $valid_form = $valid_name && $valid_description && $valid_date && $valid_progress && $valid_dependent;
+    $valid_name = strlen($name) > 0 && strlen($name) <= MENU_NAME_MAX_LENGTH;
+    $valid_price = $price && $price > 0;
+    $valid_description = strlen($description) > 0 && strlen($description) <= MENU_DESCRIPTION_MAX_LENGTH;
+    $valid_category = in_array($category, MENU_CATEGORIES);
+    $valid_image_type = $image ? strstr($image["type"], "image/") : null;
+    $valid_image_size = $image ? $image["size"] <= MENU_IMAGE_MAX_SIZE : null;
+    $valid_image = $valid_image_type && $valid_image_size;
+    $valid_form = $valid_name && $valid_price && $valid_description && $valid_category && $valid_image;
 
     // Proceed to insert data if all is valid 
     if ($valid_form) {
         // Boolean
         $query_success = true;
-        $valid_dependent_task = true;
 
-        // Check if dependent task exists
-        if ($dependent) {
-            $select_dependent_query = "SELECT * FROM Task 
-                                    WHERE id = :dependent_id";
-            try {
-                $stmt = $pdo->prepare($select_dependent_query);
-                $stmt->bindParam(":dependent_id", $dependent, PDO::PARAM_INT);
-                $stmt->execute();
-            } catch (PDOException $e) {
-                $query_success = false;
-                $database_error = $e->getMessage();
-                $valid_dependent_task = false;
-            }
-        }
+        // Insert data
+        $insert_query = "INSERT INTO Menu 
+                            (name, price, description, category, image_name)
+                        VALUES 
+                            (:name, :price, :description, :category, :image_name)";
+        try {
+            $stmt = $pdo->prepare($insert_query);
+            $stmt->bindParam(":name", $name, PDO::PARAM_STR);
+            $stmt->bindParam(":price", $price, PDO::PARAM_STR);
+            $stmt->bindParam(":description", $description, PDO::PARAM_STR);
+            $stmt->bindParam(":category", $category, PDO::PARAM_STR);
+            $stmt->bindParam(":image_name", $image["name"], PDO::PARAM_STR);
+            $stmt->execute();
 
-        // If dependent task exists, ensure it is not completed
-        $select_dependent_result = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (
-            $query_success &&
-            $valid_dependent_task = (!$dependent ||
-                (isset($select_dependent_result["username"]) &&
-                    $select_dependent_result["progress"] !== "Completed" &&
-                    $select_dependent_result["username"] === $username))
-        ) {
-            // Insert data
-            $insert_query = "INSERT INTO TASK 
-                                (username, name, description, todo_date, progress" .
-                ($dependent ? ", dependent_on_id" : "") . ")
-                            VALUES
-                                (:username, :name, :description, :date, :progress" .
-                ($dependent ? ", :dependent_id" : "") . ")";
-            try {
-                $stmt = $pdo->prepare($insert_query);
-                $stmt->bindParam(":username", $username, PDO::PARAM_STR);
-                $stmt->bindParam(":name", $name, PDO::PARAM_STR);
-                $stmt->bindParam(":description", $description, PDO::PARAM_STR);
-                $stmt->bindParam(":date", $date, PDO::PARAM_STR);
-                $stmt->bindParam(":progress", $progress, PDO::PARAM_STR);
-                if ($dependent) {
-                    $stmt->bindParam(":dependent_id", $dependent, PDO::PARAM_INT);
-                }
-                $stmt->execute();
-                header("Location: index.php");
-            } catch (PDOException $e) {
-                $query_success = false;
-                $database_error = $e->getMessage();
-            }
+            // Save picture and return to index
+            move_uploaded_file($image["tmp_name"], __DIR__ . "/static/menu_images/{$image["name"]}");
+            header("Location: index.php");
+        } catch (PDOException $e) {
+            $query_success = false;
+            $database_error = $e->getMessage();
         }
+    } else {
+        $name_error_element = error_message(
+            is_empty($name)
+                ? empty_error("Menu name")
+                : ERROR["menu_name"],
+            "name"
+        );
+        $price_error_element = error_message(
+            is_empty($price)
+                ? empty_error("Menu price")
+                : ERROR["menu_price"],
+            "price"
+        );
+        $description_error_element = error_message(
+            is_empty($description)
+                ? empty_error("Menu description")
+                : ERROR["menu_description"],
+            "description"
+        );
+        $category_error_element = error_message(
+            is_empty($category)
+                ? empty_error("Menu category")
+                : ERROR["menu_category"],
+            "category"
+        );
+        $image_error_element = error_message(
+            !$image_not_empty
+                ? empty_error("Menu image")
+                : (!$valid_image_type
+                    ? ERROR["image_type"]
+                    : ERROR["image_size"]),
+            "image"
+        );
     }
 }
 
@@ -86,78 +101,90 @@ if ($post_req) {
 <html lang="en">
 
 <head>
-    <?= head("Add a new task") ?>
+    <?= head("Add a menu item") ?>
     <script src="static/scripts/add.js" type="module"></script>
 </head>
 
 <body>
     <!-- Navbar -->
-    <?= navbar() ?>
+    <?= navbar(true, "add", true) ?>
 
     <!-- Main -->
     <main class="form-main opacity-0">
         <!-- Form -->
-        <form id="addForm" action="add.php" method="post">
+        <form id="addForm" action="add.php" method="post" enctype="multipart/form-data">
             <!-- Heading -->
             <h1 class="form-header">
-                Add a new task.
+                Add a menu item.
             </h1>
 
             <!-- Name -->
             <div class="input-ctr">
                 <label for="name">Name</label>
                 <input type="text" id="name" name="name" spellcheck="false">
-                <?= ($post_req && !$valid_name) ? error_message(is_empty($name) ? empty_error("task name") : ERROR["task_name"], "name") : "" ?>
+                <?= ($post_req && !$valid_name) ? $name_error_element : "" ?>
             </div>
 
-            <!-- Todo Date -->
+            <!-- Price -->
             <div class="input-ctr">
-                <label for="date">Todo Date</label>
-                <input type="date" id="date" name="date" value="<?= get_curdate() ?>">
-                <?= ($post_req && !$valid_date) ? error_message(is_empty($date) ? empty_error("to-do date") : ERROR["task_date"], "date") : "" ?>
+                <label for="price">Price</label>
+                <input type="number" id="price" name="price" step="0.01">
+                <?= ($post_req && !$valid_price) ? $price_error_element : "" ?>
             </div>
 
-            <!-- Current Progress -->
+            <!-- Description -->
+            <div class="input-ctr space-y-3">
+                <label for="description">Description</label>
+                <div id="descriptionContainer" class="relative">
+                    <textarea name="description" id="description" rows="3" spellcheck="false"></textarea>
+                    <div class="textarea-counter"><span id="textareaCount">0</span>/<?= MENU_DESCRIPTION_MAX_LENGTH ?></div>
+                </div>
+                <?= ($post_req && !$valid_description) ? $description_error_element : "" ?>
+            </div>
+
+            <!-- Image -->
             <div class="input-ctr">
-                <label for="date">Current Progress</label>
-                <div id="progressChoices" class="input-progress-choices-ctr">
+                <label for="image">Image</label>
+                <div class="prev-pict-ctr">
+                    <div id="imagePreviewContainer" class="prev-pict group">
+                        <div id="imageUploadText" class="prev-pict-upload-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="prev-pict-icon">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3V15" />
+                            </svg>
+                            <div class="prev-pict-text">
+                                Upload image
+                            </div>
+                        </div>
+                        <img id="imagePreview" src="" alt="" class="prev-pict-img hidden">
+                    </div>
+                    <div id="imageName" class="prev-pict-name hidden"></div>
+                    <?= ($post_req && !$valid_image) ? $image_error_element : "" ?>
+                </div>
+                <input id="image" name="image" type="file">
+            </div>
+
+            <!-- Current category -->
+            <div class="input-ctr">
+                <label for="category">Category</label>
+                <div id="categoryChoices" class="grid grid-cols-1 gap-2 min-[600px]:grid-cols-3 min-[600px]:gap-4">
                     <?php
-                    foreach (TASK_PROGRESS as $progress) {
-                        if ($progress !== "Completed") {
+                    foreach (MENU_CATEGORIES as $category) {
+                        if ($category !== "Completed") {
                     ?>
-                            <button id="<?= to_camel_case($progress) ?>Progress" type="button" data-progress="<?= $progress ?>" class="button-gray<?= $progress === "Not started" ? "-active" : "" ?>">
-                                <?= $progress ?>
+                            <button id="categoryChoice<?= to_camel_case($category) ?>" type="button" data-value="<?= $category ?>" class="button-black">
+                                <?= $category ?>
                             </button>
                     <?php
                         }
                     }
                     ?>
                 </div>
-                <input type="text" id="progress" name="progress" class="hidden" value="Not started">
-                <?= ($post_req && !$valid_progress) ? error_message(is_empty($progress) ? empty_error("task progress") : ERROR["task_progress"], "progress") : "" ?>
-            </div>
-
-            <!-- Dependent Task -->
-            <div id="dependentTaskInputContainer" class="input-ctr hidden opacity-0">
-                <label for="dependentTask">Dependent Task</label>
-                <select name="dependentTask" id="dependentTask">
-                    <option disabled selected>Select a task to wait on</option>
-                </select>
-                <?= ($post_req && (!$valid_dependent || ($valid_form && !$valid_dependent_task))) ? error_message(is_empty($dependent) ? empty_error("task dependent") : ERROR["task_dependent"], "dependentTask") : "" ?>
-            </div>
-
-            <!-- Description -->
-            <div class="input-ctr space-y-3">
-                <label for="description">Description <span class="text-optional">Optional</span></label>
-                <div id="descriptionContainer" class="relative">
-                    <textarea name="description" id="description" rows="3" spellcheck="false"></textarea>
-                    <div class="textarea-counter"><span id="textareaCount">0</span>/<?= TASKDESC_MAX_LENGTH ?></div>
-                </div>
-                <?= ($post_req && !$valid_description) ? error_message(ERROR["task_description"], "description") : "" ?>
+                <input type="text" id="category" name="category" class="hidden">
+                <?= ($post_req && !$valid_category) ? $category_error_element : "" ?>
             </div>
 
             <!-- Submit -->
-            <button type="submit" class="button-blue">Add task</button>
+            <button type="submit" class="button-black-active">Add menu</button>
 
             <!-- Form error message -->
             <?=

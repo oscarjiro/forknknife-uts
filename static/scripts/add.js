@@ -1,41 +1,43 @@
-import { ERROR, TASKDESC_MAX_LENGTH } from "./const.js";
+import { ERROR, MENU_DESCRIPTION_MAX_LENGTH } from "./const.js";
 import {
-    checkTaskDescription,
+    fadeInMain,
     getValue,
     errorMessageId,
     onInputHandler,
-    checkTaskName,
-    isValidProgress,
-    fadeInMain,
-    checkDate,
+    checkMenuName,
+    checkMenuCategory,
+    checkMenuPrice,
+    checkMenuDescription,
     showError,
+    inputChoicesEventListener,
+    previewImage,
+    checkImageType,
+    checkImageSize,
 } from "./utils.js";
 import { emptyError, errorMessage } from "./components.js";
-import { getTasks } from "./api.js";
 
-$(document).ready(async () => {
-    // Get all tasks
-    const allTasks = await loadAllTasks();
-    const tasks = allTasks.filter((task) => task.progress !== "Completed");
-    if (tasks.length === 0) {
-        $("#waitingOnProgress").remove();
-    } else {
-        tasks.forEach(({ id, name }) => {
-            dependentTask.element.append(`
-                    <option value="${id}"><strong class="font-bold">${name}</strong></option>
-                `);
-        });
-    }
-
+$(document).ready(() => {
     // Name on input check
     name.element.on("input", () =>
         onInputHandler(
             name.element,
             name.errorPlacement,
-            checkTaskName,
+            checkMenuName,
             name.error,
             ERROR.taskName,
             name.errorId
+        )
+    );
+
+    // Price on input check
+    price.element.on("input", () =>
+        onInputHandler(
+            price.element,
+            price.errorPlacement,
+            checkMenuPrice,
+            price.error,
+            ERROR.menuPrice,
+            price.errorId
         )
     );
 
@@ -45,7 +47,7 @@ $(document).ready(async () => {
         let value = description.element.val();
 
         // Truncate values
-        const truncatedValue = value.substring(0, TASKDESC_MAX_LENGTH);
+        const truncatedValue = value.substring(0, MENU_DESCRIPTION_MAX_LENGTH);
         description.element.val(truncatedValue);
 
         // Update element
@@ -56,106 +58,75 @@ $(document).ready(async () => {
         onInputHandler(
             description.element,
             description.errorPlacement,
-            checkTaskDescription,
+            checkMenuDescription,
             description.error,
             ERROR.taskDescription,
             description.errorId
         );
     });
 
-    // Date on change check
-    date.element.change(() => {
+    // Category buttons
+    inputChoicesEventListener(category.parentId, category.element);
+
+    // Category element when changed
+    category.element.change(() =>
         onInputHandler(
-            date.element,
-            date.errorPlacement,
-            checkDate,
-            date.error,
-            ERROR.taskDate,
-            date.errorId
-        );
-    });
+            category.element,
+            category.errorPlacement,
+            checkMenuCategory,
+            category.error,
+            ERROR.menuCategory,
+            category.errorId
+        )
+    );
 
-    // Progress buttons
-    $("#progressChoices").on("click", "[data-progress]", function () {
-        const progressValue = $(this).data("progress");
+    // Image upload
+    image.element.change((event) =>
+        previewImage(
+            event,
+            image.element,
+            image.emptyError,
+            image.errorId,
+            image.errorPlacement,
+            "image",
+            image.previewElement,
+            image.previewName,
+            image.uploadText
+        )
+    );
 
-        // Update hidden progress input
-        progress.element.val(progressValue).trigger("change");
-
-        // Change button class for all children
-        $("#progressChoices [data-progress]").each(function () {
-            $(this).toggleClass(
-                "button-gray",
-                $(this).data("progress") !== progressValue
-            );
-            $(this).toggleClass(
-                "button-gray-active",
-                $(this).data("progress") === progressValue
-            );
-        });
-    });
-
-    // Progress element when changed
-    progress.element.change(() => {
-        // Basic input handler
-        onInputHandler(
-            progress.element,
-            progress.errorPlacement,
-            isValidProgress,
-            progress.error,
-            ERROR.taskProgress,
-            progress.errorId
-        );
-
-        // If progress is waiting on, show dependent input
-        const progressValue = getValue(progress.element);
-        if (tasks.length > 0 && progressValue === "Waiting on") {
-            // Unhide input container
-            dependentTask.parent.removeClass("hidden");
-            setTimeout(
-                () => dependentTask.parent.removeClass("opacity-0"),
-                100
-            );
-        } else {
-            // Hide input container
-            if (!dependentTask.parent.hasClass("opacity-0")) {
-                dependentTask.parent.addClass("opacity-0");
-                if (!dependentTask.parent.hasClass("hidden")) {
-                    setTimeout(
-                        () => dependentTask.parent.addClass("hidden"),
-                        100
-                    );
-                }
-            } else if (!dependentTask.parent.hasClass("hidden")) {
-                dependentTask.parent.addClass("hidden");
-            }
-            $(dependentTask.errorId).remove();
-        }
-    });
+    image.uploadTrigger.click(() => image.element.click());
 
     // Form submission
     $("#addForm").submit((event) => {
         // Get all values
         const nameValue = getValue(name.element);
+        const priceValue = getValue(price.element);
         const descriptionValue = getValue(description.element);
-        const progressValue = getValue(progress.element);
-        const dateValue = getValue(date.element);
-        const dependentTaskValue = parseInt(dependentTask.element.val());
+        const categoryValue = getValue(category.element);
+        const nonEmptyImage = image.element.get(0).files.length > 0;
+        const uploadedImage = nonEmptyImage
+            ? image.element.get(0).files[0]
+            : null;
 
         // Check form validity
-        const validName = checkTaskName(nameValue);
-        const validDescription = checkTaskDescription(descriptionValue);
-        const validProgress = isValidProgress(progressValue);
-        const validDate = checkDate(dateValue);
-        const validDependentTask =
-            (progressValue !== "Waiting on" && !dependentTaskValue) ||
-            Number.isInteger(dependentTaskValue);
+        const validName = checkMenuName(nameValue);
+        const validPrice = checkMenuPrice(priceValue);
+        const validDescription = checkMenuDescription(descriptionValue);
+        const validCategory = checkMenuCategory(categoryValue);
+        const validImageType = nonEmptyImage
+            ? checkImageType(uploadedImage.type)
+            : false;
+        const validImageSize = nonEmptyImage
+            ? checkImageSize(uploadedImage.size)
+            : false;
+        const validImage = validImageType && validImageSize;
         const validForm =
             validName &&
+            validPrice &&
             validDescription &&
-            validProgress &&
-            validDate &&
-            validDependentTask;
+            validCategory &&
+            validImage;
 
         // If invalid, prevent submission
         if (!validForm) {
@@ -166,64 +137,62 @@ $(document).ready(async () => {
                 nameValue,
                 name.element,
                 validName,
-                "task name",
+                "Menu name",
                 name.error,
                 name.emptyError,
-                ERROR.taskName,
+                ERROR.menuName,
                 name.errorId
+            );
+
+            showError(
+                priceValue,
+                price.element,
+                validPrice,
+                "Menu price",
+                price.error,
+                price.emptyError,
+                ERROR.menuPrice,
+                price.errorId
             );
 
             showError(
                 descriptionValue,
                 description.element,
                 validDescription,
-                "task description",
+                "Menu description",
                 description.error,
-                "",
-                ERROR.taskDescription,
+                description.emptyError,
+                ERROR.menuDescription,
                 description.errorId
             );
 
             showError(
-                progressValue,
-                progress.element,
-                validProgress,
-                "task progress",
-                progress.error,
-                progress.emptyError,
-                ERROR.taskProgress,
-                progress.errorId
+                categoryValue,
+                category.element,
+                validCategory,
+                "Menu category",
+                category.error,
+                category.emptyError,
+                ERROR.menuCategory,
+                category.errorId
             );
 
-            showError(
-                dateValue,
-                date.element,
-                validDate,
-                "to-do date",
-                date.error,
-                date.emptyError,
-                ERROR.taskDate,
-                date.errorId
-            );
-
-            const emptyDependentTask =
-                !dependentTaskValue && !validDependentTask;
-            const dependentTaskError = emptyDependentTask
-                ? dependentTask.emptyError
-                : dependentTask.error;
-            const dependentTaskErrorMessage = emptyDependentTask
-                ? emptyError("task dependent")
-                : ERROR.taskDependent;
-            if (!validDependentTask && $(dependentTask.errorId).length === 0) {
-                dependentTask.errorPlacement.after(dependentTaskError);
-            } else if (
-                !validDependentTask &&
-                $(dependentTask.errorId).length > 0 &&
-                $(dependentTask.errorId).text() !== dependentTaskErrorMessage
-            ) {
-                $(dependentTask.errorId).text(dependentTaskErrorMessage);
-            } else if (validDependentTask) {
-                $(dependentTask.errorId).remove();
+            const imageError = !nonEmptyImage
+                ? image.emptyError
+                : !validImageType
+                ? image.errorType
+                : image.errorSize;
+            const imageErrorMessage = !nonEmptyImage
+                ? emptyError("Menu image")
+                : !validImageType
+                ? ERROR.imageType
+                : ERROR.imageSize;
+            if (!validImage && $(image.errorId).length === 0) {
+                image.errorPlacement.after(imageError);
+            } else if (!validImage && $(image.errorId).length > 0) {
+                $(image.errorId).text(imageErrorMessage);
+            } else {
+                $(image.errorId).remove();
             }
         }
     });
@@ -236,46 +205,46 @@ $(document).ready(async () => {
 const inputs = {
     name: {
         element: $("#name"),
-        error: errorMessage(ERROR.taskName, "name"),
-        emptyError: errorMessage(emptyError("task name"), "name"),
+        error: errorMessage(ERROR.menuName, "name"),
+        emptyError: errorMessage(emptyError("Menu name"), "name"),
         errorId: errorMessageId("name"),
         errorPlacement: $("#name"),
     },
+    price: {
+        element: $("#price"),
+        error: errorMessage(ERROR.menuPrice, "price"),
+        emptyError: errorMessage(emptyError("Menu price"), "price"),
+        errorId: errorMessageId("price"),
+        errorPlacement: $("#price"),
+    },
     description: {
         element: $("#description"),
-        error: errorMessage(ERROR.taskDescription, "description"),
+        error: errorMessage(ERROR.menuDescription, "description"),
+        emptyError: errorMessage(emptyError("Menu description"), "description"),
         errorId: errorMessageId("description"),
         errorPlacement: $("#descriptionContainer"),
     },
-    progress: {
-        element: $("#progress"),
-        error: errorMessage(ERROR.taskProgress, "progress"),
-        emptyError: errorMessage(emptyError("task progress"), "progress"),
-        errorId: errorMessageId("progress"),
-        errorPlacement: $("#progressChoices"),
+    category: {
+        element: $("#category"),
+        error: errorMessage(ERROR.menuCategory, "category"),
+        emptyError: errorMessage(emptyError("Menu category"), "category"),
+        errorId: errorMessageId("category"),
+        errorPlacement: $("#categoryChoices"),
+        parentId: "categoryChoices",
     },
-    date: {
-        element: $("#date"),
-        error: errorMessage(ERROR.taskDate, "date"),
-        emptyError: errorMessage(emptyError("to-do date"), "date"),
-        errorId: errorMessageId("date"),
-        errorPlacement: $("#date"),
-    },
-    dependentTask: {
-        element: $("#dependentTask"),
-        error: errorMessage(ERROR.taskDependent, "dependentTask"),
-        emptyError: errorMessage(emptyError("task dependent"), "dependentTask"),
-        errorId: errorMessageId("dependentTask"),
-        parent: $("#dependentTaskInputContainer"),
-        errorPlacement: $("#dependentTask"),
+    image: {
+        element: $("#image"),
+        errorPlacement: $("#imageName"),
+        errorType: errorMessage(ERROR.imageType, "image"),
+        errorSize: errorMessage(ERROR.imageSize, "image"),
+        emptyError: errorMessage(emptyError("Menu image"), "image"),
+        errorId: errorMessageId("image"),
+        previewElement: $("#imagePreview"),
+        previewName: $("#imageName"),
+        uploadText: $("#imageUploadText"),
+        uploadTrigger: $("#imagePreviewContainer"),
     },
 };
 
 // Destructure inputs
-const { name, description, progress, date, dependentTask } = inputs;
-
-// Load all tasks
-const loadAllTasks = async () => {
-    const result = await getTasks();
-    return result.result;
-};
+const { name, price, description, category, image } = inputs;

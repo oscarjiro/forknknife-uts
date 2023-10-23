@@ -18,7 +18,10 @@ function redirect_error()
 // Check if authenticated
 function is_authenticated()
 {
-    return isset($_SESSION["is_authenticated"]) && $_SESSION["is_authenticated"] && isset($_SESSION["username"]) && $_SESSION["username"];
+    return
+        isset($_SESSION["is_authenticated"]) && $_SESSION["is_authenticated"]
+        && isset($_SESSION["username"]) && $_SESSION["username"]
+        && isset($_SESSION["is_admin"]);
 }
 
 // Logout
@@ -26,8 +29,8 @@ function logout()
 {
     $route = get_route();
     session_destroy();
-    if ($route !== "login.php" && $route !== "register.php" && $route !== "forgot-password.php" && $route !== "request_password_reset.php" && $route !== "reset-password.php") {
-        header("Location: login.php");
+    if ($route !== "index.php" && !in_array($route, UNAUTHENTICATED_ROUTES) && !in_array($route, API_ROUTES)) {
+        header("Location: index.php");
         exit;
     } else {
         session_start();
@@ -56,14 +59,18 @@ function empty_error($name)
 }
 
 // Convert to camel case
-function to_camel_case($input)
+function to_camel_case($inputString)
 {
-    $words = preg_split("/\s+/", $input);
-    $result = lcfirst(array_shift($words));
-    foreach ($words as $word) {
-        $result .= ucfirst($word);
-    }
-    return $result;
+    // Replace invalid characters with underscores
+    $inputString = preg_replace('/[^a-zA-Z0-9]+/', '_', $inputString);
+
+    // Replace spaces with underscores
+    $inputString = str_replace(' ', '_', $inputString);
+
+    // Convert to lowercase and remove underscores between words
+    $inputString = strtolower($inputString);
+    $inputString = str_replace('_', '', ucwords($inputString, '_'));
+    return lcfirst($inputString);
 }
 
 // Greet according to time of day
@@ -71,13 +78,13 @@ function greet()
 {
     $current_hour = date("H");
     if ($current_hour >= 5 && $current_hour < 12) {
-        $greeting = "Good morning";
+        $greeting = "Wake up to delicious flavors";
     } elseif ($current_hour >= 12 && $current_hour < 18) {
-        $greeting = "Good afternoon";
+        $greeting = "Lunchtime elegance awaits";
     } elseif ($current_hour >= 18 && $current_hour < 24) {
-        $greeting = "Good evening";
+        $greeting = "Dine under the stars";
     } else {
-        $greeting = "Good night";
+        $greeting = "Wishing you a restful night";
     }
     return $greeting;
 }
@@ -105,7 +112,7 @@ function convert_date($date)
 function check_date($date)
 {
     // Ensure in YYYY-MM-DD format
-    if (!preg_match(TASK_TODODATE_REGEXP, $date)) return false;
+    if (!preg_match(ISO_8601_DATE_REGEXP, $date)) return false;
 
     // Create DateTime objects for the input date and today's date
     $inputDate = new DateTime($date);

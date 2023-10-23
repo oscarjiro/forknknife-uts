@@ -1,25 +1,27 @@
-// Get all tasks
-export const getTasks = async () => {
+import { ERROR } from "./const.js";
+
+// Get all menu items
+export const getMenu = async () => {
     try {
-        const response = await fetch("api/get_tasks.php");
+        const response = await fetch("api/get_menu.php");
         const result = await response.json();
         return result;
     } catch (error) {
         return {
             ok: false,
             result: [],
-            error: { message: error },
+            error: { message: ERROR.general },
         };
     }
 };
 
 // Delete task
-export const deleteTask = async (taskId) => {
+export const deleteMenu = async (menuId) => {
     try {
-        const response = await fetch("api/delete_task.php", {
+        const response = await fetch("api/delete_menu.php", {
             method: "DELETE",
             body: JSON.stringify({
-                taskId: taskId,
+                menuId: menuId,
             }),
             headers: { "Content-Type": "application/json" },
         });
@@ -28,7 +30,7 @@ export const deleteTask = async (taskId) => {
     } catch (error) {
         return {
             ok: false,
-            error: { message: error },
+            error: { message: ERROR.general },
         };
     }
 };
@@ -49,7 +51,7 @@ export const taskAction = async (taskId, action) => {
     } catch (error) {
         return {
             ok: false,
-            error: { message: error },
+            error: { message: ERROR.general },
         };
     }
 };
@@ -69,7 +71,7 @@ export const sendPasswordResetLink = async (email) => {
     } catch (error) {
         return {
             ok: false,
-            error: { message: "An error occured. Please try again." },
+            error: { message: ERROR.general },
         };
     }
 };

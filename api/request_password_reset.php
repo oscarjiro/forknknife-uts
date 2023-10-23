@@ -6,10 +6,6 @@ header("Content-Type: application/json");
 
 // Redirect if not POST method
 if ($_SERVER["REQUEST_METHOD"] !== "POST" || is_authenticated()) {
-    echo json_encode([
-        "ok" => false,
-        "error" => ["message" => "POST request is required."],
-    ]);
     header("Location: /webprog/uts-lab/index.php");
     exit;
 }
@@ -102,7 +98,7 @@ $mail->isHtml(true);
 // Configure mail
 $mail->setFrom(SMTP_USER);
 $mail->addAddress($email);
-$mail->Subject = "todo. | Password Reset for {$result["username"]}";
+$mail->Subject = "fork & knife | Password Reset for {$result["username"]}";
 $mail->Body = <<<END
 
 Click <a href="http://localhost/webprog/uts-lab/reset-password.php?token=$token">here</a> to reset your password.

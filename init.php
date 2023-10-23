@@ -26,12 +26,11 @@ try {
     return;
 }
 
-// Checking database existence
+// Check if database exists
+$check_db_query = "SELECT SCHEMA_NAME 
+                FROM INFORMATION_SCHEMA.SCHEMATA
+                WHERE SCHEMA_NAME = :db_name";
 try {
-    // Check if database exists
-    $check_db_query = "SELECT SCHEMA_NAME 
-                    FROM INFORMATION_SCHEMA.SCHEMATA
-                    WHERE SCHEMA_NAME = :db_name";
     $stmt = $pdo->prepare($check_db_query);
     $stmt->bindValue(":db_name", DB_NAME, PDO::PARAM_STR);
     $stmt->execute();
@@ -42,16 +41,16 @@ try {
 }
 
 // Create database if it does not exist
-try {
-    if (!$db_exists = $stmt->rowCount() > 0) {
-        $create_db_query = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
+if (!$db_exists = $stmt->rowCount() > 0) {
+    $create_db_query = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
+    try {
         $stmt = $pdo->prepare($create_db_query);
         $stmt->execute();
+    } catch (PDOException $e) {
+        redirect_error();
+        $error_scope = "An error occured during setting up database.";
+        return;
     }
-} catch (PDOException $e) {
-    redirect_error();
-    $error_scope = "creating database";
-    return;
 }
 
 // Reconnect to the database
@@ -65,20 +64,24 @@ try {
 }
 
 // Create table User if it does not exist
+$create_user_query = "CREATE TABLE IF NOT EXISTS User (
+                        username VARCHAR(" . USERNAME_MAX_LENGTH . ") PRIMARY KEY NOT NULL,
+                        email VARCHAR(" . EMAIL_MAX_LENGTH . ") NOT NULL UNIQUE,
+                        first_name VARCHAR(" . FIRST_NAME_MAX_LENGTH . ") NOT NULL,
+                        last_name VARCHAR(" . LAST_NAME_MAX_LENGTH . ") NOT NULL,
+                        password VARCHAR(255) NOT NULL,
+                        is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+                        gender CHAR(1) NOT NULL CHECK (gender IN ('M', 'F')),
+                        reset_token_hash VARCHAR(64) UNIQUE,
+                        reset_token_expires_at DATETIME,
+                        CONSTRAINT validate_username CHECK (
+                            username REGEXP :username_regexp
+                        ),
+                        CONSTRAINT validate_email CHECK (
+                            email REGEXP :email_regexp
+                        )
+                    )";
 try {
-    $create_user_query = "CREATE TABLE IF NOT EXISTS User (
-                            username VARCHAR(" . USERNAME_MAX_LENGTH . ") PRIMARY KEY NOT NULL,
-                            email VARCHAR(" . EMAIL_MAX_LENGTH . ") NOT NULL,
-                            password VARCHAR(255) NOT NULL,
-                            reset_token_hash VARCHAR(64) UNIQUE,
-                            reset_token_expires_at DATETIME,
-                            CONSTRAINT validate_username CHECK (
-                                username REGEXP :username_regexp
-                            ),
-                            CONSTRAINT validate_email CHECK (
-                                email REGEXP :email_regexp
-                            )
-                        )";
     $stmt = $pdo->prepare($create_user_query);
     $stmt->bindValue(":username_regexp", trim(USERNAME_REGEXP, "/"), PDO::PARAM_STR);
     $stmt->bindValue(":email_regexp", trim(EMAIL_REGEXP, "/"), PDO::PARAM_STR);
@@ -89,38 +92,65 @@ try {
     return;
 }
 
-// Create table Task
+// Create table Menu
+$valid_categories_list = array_map(function ($category) {
+    return "'$category'";
+}, MENU_CATEGORIES);
+$valid_categories_string = implode(", ", $valid_categories_list);
+$create_menu_query = "CREATE TABLE IF NOT EXISTS Menu (
+                        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        name VARCHAR(" . MENU_NAME_MAX_LENGTH . ") NOT NULL,
+                        description VARCHAR(" . MENU_DESCRIPTION_MAX_LENGTH . ") NOT NULL,
+                        category VARCHAR(25) NOT NULL CHECK (category IN (" . $valid_categories_string . ")),
+                        price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
+                        image_name VARCHAR(255) NOT NULL
+                    )";
 try {
-    $valid_progress_list = array_map(function ($progress) {
-        return "'$progress'";
-    }, TASK_PROGRESS);
-    $valid_progress_string = implode(", ", $valid_progress_list);
-    $create_task_query = "CREATE TABLE IF NOT EXISTS Task (
-                            id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                            username VARCHAR(" . USERNAME_MAX_LENGTH . ") NOT NULL,
-                            name VARCHAR(" . TASKNAME_MAX_LENGTH . ") NOT NULL,
-                            description VARCHAR(" . TASKDESC_MAX_LENGTH . "),
-                            progress VARCHAR(20) NOT NULL DEFAULT 'Not started' CHECK (progress IN (" . $valid_progress_string . ")),
-                            todo_date DATE NOT NULL,
-                            dependent_on_id INTEGER,
-                            CONSTRAINT fk_task_user FOREIGN KEY (username) REFERENCES User (username) ON DELETE CASCADE,
-                            CONSTRAINT fk_task_dependency FOREIGN KEY (dependent_on_id) REFERENCES Task (id) ON DELETE SET NULL,
-                            CHECK (
-                                (progress <> 'Waiting on' AND dependent_on_id IS NULL)
-                                OR
-                                (progress = 'Waiting on' AND dependent_on_id IS NOT NULL)
-                            )
-                        )";
-    $stmt = $pdo->prepare($create_task_query);
+    $stmt = $pdo->prepare($create_menu_query);
     $stmt->execute();
 } catch (PDOException $e) {
     redirect_error();
-    $error_scope = "An error occured during creating table Task.";
+    $error_scope = "An error occured during creating table Menu.";
+    return;
+}
+
+// Create table Order
+$create_order_query = "CREATE TABLE IF NOT EXISTS `Order` (
+                        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        username VARCHAR(" . USERNAME_MAX_LENGTH . ") NOT NULL,
+                        order_date DATETIME NOT NULL DEFAULT NOW(),
+                        complete BOOLEAN NOT NULL DEFAULT FALSE,
+                        CONSTRAINT fk_order_user FOREIGN KEY (username) REFERENCES User (username) ON DELETE CASCADE
+                    )";
+try {
+    $stmt = $pdo->prepare($create_order_query);
+    $stmt->execute();
+} catch (PDOException $e) {
+    redirect_error();
+    $error_scope = "An error occured during creating table Order.";
+    return;
+}
+
+// Create table OrderDetails
+$create_orderdetails_query = "CREATE TABLE IF NOT EXISTS OrderDetails (
+                                    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                                    order_id INTEGER NOT NULL,
+                                    menu_id INTEGER NOT NULL,
+                                    quantity INTEGER NOT NULL CHECK (quantity > 0),
+                                    CONSTRAINT fk_orderdetails_order FOREIGN KEY (order_id) REFERENCES `Order` (id) ON DELETE CASCADE,
+                                    CONSTRAINT fk_orderdetails_menu FOREIGN KEY (menu_id) REFERENCES Menu (id) ON DELETE CASCADE
+                            )";
+try {
+    $stmt = $pdo->prepare($create_orderdetails_query);
+    $stmt->execute();
+} catch (PDOException $e) {
+    redirect_error();
+    $error_scope = "An error occured during creating table OrderDetails.";
     return;
 }
 
 // Throw to login if not authenticated
-if (!$is_authenticated = is_authenticated()) logout();
+if (!is_authenticated()) logout();
 
 // Otherwise, ensure user exists
 else {
@@ -138,4 +168,10 @@ else {
 
     // If user does not exist, throw to login
     if ($stmt->rowCount() === 0) logout();
+}
+
+// If authenticated but in non authenticated page, throw to index
+if (is_authenticated() && $route !== "index.php" && in_array($route, UNAUTHENTICATED_ROUTES)) {
+    header("Location: index.php");
+    exit;
 }

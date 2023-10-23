@@ -1,19 +1,25 @@
 import {
     USERNAME_REGEXP,
     PASSWORD_REGEXP,
-    TASK_PROGRESS,
-    TASKNAME_MAX_LENGTH,
-    TASKDESC_MAX_LENGTH,
-    TASK_TODODATE_REGEXP,
     EMAIL_MAX_LENGTH,
     EMAIL_REGEXP,
+    FIRST_NAME_MAX_LENGTH,
+    LAST_NAME_MAX_LENGTH,
+    MENU_NAME_MAX_LENGTH,
+    MENU_DESCRIPTION_MAX_LENGTH,
+    MENU_CATEGORIES,
+    ISO_8601_DATE_REGEXP,
+    MENU_IMAGE_MAX_SIZE,
+    ERROR,
 } from "./const.js";
 import {
     emptyError,
+    errorMessage,
     passwordToggleHide,
     passwordToggleVisible,
 } from "./components.js";
 
+/* STRING MANIPULATION */
 // Uppercase every first letter of a word
 export const uppercaseWords = (string) => {
     let words = string.split(" ");
@@ -28,67 +34,27 @@ export const uppercaseWords = (string) => {
 export const capitalizeFirst = (string) =>
     !string ? string : string.charAt(0).toUpperCase() + string.slice(1);
 
-// Check if empty string
-export const isEmpty = (string) => string.length === 0;
-
 // Convert to camel case
-export const toCamelCase = (string) =>
-    string.replace(/(\s|-|_)(.)/g, (_, separator, char) => char.toUpperCase());
-
-// Clean text input
-export const cleanInput = (input) => input.trim();
-
-// Get input value
-export const getValue = (input) => cleanInput(input?.val());
-
-// Toggle view password
-export const toggleViewPassword = (toggle, input) => {
-    const isHidden = input.attr("type") === "password";
-    toggle.html(isHidden ? passwordToggleHide : passwordToggleVisible);
-    input.attr("type", isHidden ? "text" : "password");
+export const toCamelCase = (string) => {
+    return string
+        .toLowerCase()
+        .replace(/\s(.)/g, function (match, group) {
+            return group.toUpperCase();
+        })
+        .replace(/\s/g, "")
+        .replace(/^(.)/, function (match, group) {
+            return group.toLowerCase();
+        })
+        .replace(/[^a-zA-Z0-9]/g, "");
 };
 
-// Get error message ID
-export const errorMessageId = (name) => `#${name}ErrorMessage`;
+// Convert to IDR
+export const toCurrency = (price) => {
+    const formatter = new Intl.NumberFormat("id-ID", {
+        minimumFractionDigits: 2,
+    });
 
-// Check email
-export const checkEmail = (email) =>
-    email.length > 0 &&
-    email.length <= EMAIL_MAX_LENGTH &&
-    EMAIL_REGEXP.test(email);
-
-// Check username
-export const checkUsername = (username) => USERNAME_REGEXP.test(username);
-
-// Check password
-export const checkPassword = (password) => PASSWORD_REGEXP.test(password);
-
-// Check if valid progress
-export const isValidProgress = (progress) => TASK_PROGRESS.includes(progress);
-
-// Check task name
-export const checkTaskName = (name) =>
-    name.length > 0 && name.length <= TASKNAME_MAX_LENGTH;
-
-// Check task description
-export const checkTaskDescription = (description) =>
-    description.length <= TASKDESC_MAX_LENGTH || !description;
-
-// Check date in ISO 8601 format
-export const checkDate = (date) => {
-    // Ensure in YYYY-MM-DD format
-    if (!TASK_TODODATE_REGEXP.test(date)) return false;
-
-    // Get input and today's date as date objects
-    const inputDate = new Date(date);
-    const today = new Date();
-
-    // Set both dates to midnight to strictly compare dates
-    inputDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    // Compare if date is at least today
-    return inputDate >= today;
+    return `IDR ${formatter.format(price)}`;
 };
 
 // Convert ISO 8601 to formatted date
@@ -135,6 +101,82 @@ export const formatDate = (inputDate) => {
     return `${dayOfWeek.substr(0, 3)}, ${formattedDate}`;
 };
 
+/* STRING PRODUCTION */
+// Clean text input
+export const cleanInput = (input) => input.trim();
+
+// Get input value
+export const getValue = (input) => cleanInput(input?.val());
+
+// Get error message ID
+export const errorMessageId = (name) => `#${name}ErrorMessage`;
+
+/* CHECKERS */
+// Check if empty string
+export const isEmpty = (string) => string.length === 0;
+
+// Check username
+export const checkUsername = (username) => USERNAME_REGEXP.test(username);
+
+// Check password
+export const checkPassword = (password) => PASSWORD_REGEXP.test(password);
+
+// Check first name
+export const checkFirstName = (firstName) =>
+    firstName.length > 0 && firstName.length <= FIRST_NAME_MAX_LENGTH;
+
+// Check last name
+export const checkLastName = (lastName) =>
+    lastName.length > 0 && lastName.length <= LAST_NAME_MAX_LENGTH;
+
+// Check email
+export const checkEmail = (email) =>
+    email.length > 0 &&
+    email.length <= EMAIL_MAX_LENGTH &&
+    EMAIL_REGEXP.test(email);
+
+// Check gender
+export const checkGender = (gender) => gender === "M" || gender === "F";
+
+// Check if valid menu category
+export const checkMenuCategory = (category) =>
+    MENU_CATEGORIES.includes(category);
+
+// Check menu name
+export const checkMenuName = (name) =>
+    name.length > 0 && name.length <= MENU_NAME_MAX_LENGTH;
+
+// Check menu price
+export const checkMenuPrice = (price) => price && price > 0;
+
+// Check menu description
+export const checkMenuDescription = (description) =>
+    description.length > 0 && description.length <= MENU_DESCRIPTION_MAX_LENGTH;
+
+// Check image type
+export const checkImageType = (type) => type.startsWith("image/");
+
+// Check image type
+export const checkImageSize = (size) => size <= MENU_IMAGE_MAX_SIZE;
+
+// Check date in ISO 8601 format
+export const checkDate = (date) => {
+    // Ensure in YYYY-MM-DD format
+    if (!ISO_8601_DATE_REGEXP.test(date)) return false;
+
+    // Get input and today's date as date objects
+    const inputDate = new Date(date);
+    const today = new Date();
+
+    // Set both dates to midnight to strictly compare dates
+    inputDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+
+    // Compare if date is at least today
+    return inputDate >= today;
+};
+
+/* DOM MANIPULATION */
 // Fade in main
 export const fadeInMain = () =>
     setTimeout(() => $("main").removeClass("opacity-0"), 100);
@@ -166,6 +208,14 @@ export const popUpModal = (message, action, buttonClass) => {
     $("#cancelAction").click(closeModal);
 };
 
+// Toggle view password
+export const toggleViewPassword = (toggle, input) => {
+    const isHidden = input.attr("type") === "password";
+    toggle.html(isHidden ? passwordToggleHide : passwordToggleVisible);
+    input.attr("type", isHidden ? "text" : "password");
+};
+
+/* INPUT HANDLING */
 // General input handler
 export const onInputHandler = (
     input,
@@ -232,16 +282,12 @@ export const showError = (
     }
 
     // If invalid but inappropriate error shown, update error
-    else if (
-        !isValid &&
-        $(errorId).length > 0 &&
-        $(errorId).text() !== appropriateErrorMessage
-    ) {
+    else if (!isValid && $(errorId).length > 0) {
         $(errorId).text(appropriateErrorMessage);
     }
 
     // If valid, remove error element
-    else if (isValid) {
+    else {
         $(errorId).remove();
     }
 };
@@ -257,5 +303,102 @@ export const onlyFillShowError = (
         errorPlacement.after(errorElement);
     } else if (valid) {
         $(errorId).remove();
+    }
+};
+
+// Choices input mechanism
+export const inputChoicesEventListener = (parentId, hiddenInput) => {
+    $(`#${parentId}`).on("click", "[data-value]", function () {
+        const inputValue = $(this).data("value");
+
+        // Update hidden input
+        hiddenInput.val(cleanInput(inputValue)).trigger("change");
+
+        // Change button class for all children
+        $(`#${parentId} [data-value]`).each(function () {
+            $(this).toggleClass(
+                "button-black",
+                $(this).data("value") !== inputValue
+            );
+            $(this).toggleClass(
+                "button-black-active",
+                $(this).data("value") === inputValue
+            );
+        });
+    });
+};
+
+// Preview image
+export const previewImage = (
+    changeEvent,
+    inputElement,
+    emptyError,
+    errorMessageId,
+    errorPlacement,
+    name,
+    previewImageElement,
+    previewNameElement,
+    uploadTextElement
+) => {
+    // Get image and its type and size
+    const imageNotEmpty = inputElement.get(0).files.length > 0;
+    const image = imageNotEmpty ? inputElement.get(0).files[0] : null;
+    const validImageType = imageNotEmpty ? checkImageType(image.type) : false;
+    const validImageSize = imageNotEmpty ? checkImageSize(image.size) : false;
+    const validImage = validImageSize && validImageType;
+
+    // Prevent change if invalid
+    if (!validImage) {
+        changeEvent.preventDefault();
+        const imageErrorMessage = !imageNotEmpty
+            ? emptyError
+            : !validImageType
+            ? ERROR.imageType
+            : ERROR.imageSize;
+
+        // Show error message
+        if ($(errorMessageId).length === 0) {
+            errorPlacement.after(errorMessage(imageErrorMessage, name));
+        } else {
+            $(errorMessageId).text(imageErrorMessage);
+        }
+
+        // Hide preview image
+        previewImageElement.attr("src", "");
+        if (!previewImageElement.attr("class").includes("hidden")) {
+            previewImageElement.addClass("hidden");
+        }
+
+        // Hide preview name
+        previewNameElement.html("");
+        if (!previewNameElement.attr("class").includes("hidden")) {
+            previewNameElement.addClass("hidden");
+        }
+
+        // Show upload text
+        uploadTextElement.removeClass("opacity-0");
+
+        // Clear input value
+        inputElement.val("");
+        return;
+    }
+
+    // Remove any error message
+    $(errorMessageId).remove();
+
+    // Read uploaded image
+    const reader = new FileReader();
+    reader.readAsDataURL(image);
+
+    // Show preview image
+    reader.onload = () => {
+        previewImageElement.attr("src", reader.result);
+        previewImageElement.removeClass("hidden");
+    };
+
+    // Show preview name and hide upload text
+    previewNameElement.removeClass("hidden").html(image.name);
+    if (!uploadTextElement.attr("class").includes("opacity-0")) {
+        uploadTextElement.addClass("opacity-0");
     }
 };

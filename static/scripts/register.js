@@ -9,6 +9,10 @@ import {
     showError,
     fadeInMain,
     checkEmail,
+    checkFirstName,
+    checkLastName,
+    checkGender,
+    inputChoicesEventListener,
 } from "./utils.js";
 import { errorMessage, emptyError } from "./components.js";
 
@@ -17,7 +21,7 @@ $(document).ready(() => {
     username.element.on("input", () => {
         onInputHandler(
             username.element,
-            username.element,
+            username.errorPlacement,
             checkUsername,
             username.error,
             ERROR.username,
@@ -29,7 +33,7 @@ $(document).ready(() => {
     email.element.on("input", () =>
         onInputHandler(
             email.element,
-            email.element,
+            email.errorPlacement,
             checkEmail,
             email.error,
             ERROR.email,
@@ -37,11 +41,53 @@ $(document).ready(() => {
         )
     );
 
+    // First name on input check
+    firstName.element.on("input", () =>
+        onInputHandler(
+            firstName.element,
+            firstName.errorPlacement,
+            checkFirstName,
+            firstName.error,
+            ERROR.firstName,
+            firstName.errorId
+        )
+    );
+
+    // Last name on input check
+    lastName.element.on("input", () =>
+        onInputHandler(
+            lastName.element,
+            lastName.errorPlacement,
+            checkLastName,
+            lastName.error,
+            ERROR.lastName,
+            lastName.errorId
+        )
+    );
+
+    // Gender on change check
+    gender.element.change(() =>
+        onInputHandler(
+            gender.element,
+            gender.errorPlacement,
+            checkGender,
+            gender.error,
+            ERROR.gender,
+            gender.errorId
+        )
+    );
+
+    // Gender buttons
+    inputChoicesEventListener(gender.parentId, gender.element);
+
+    // Role buttons
+    inputChoicesEventListener(role.parentId, role.element);
+
     // Password on input check
     password.element.on("input", () => {
         onInputHandler(
             password.element,
-            $("#passwordInput"),
+            password.errorPlacement,
             checkPassword,
             password.error,
             ERROR.password,
@@ -80,20 +126,37 @@ $(document).ready(() => {
 
 // Elements
 const inputs = {
+    firstName: {
+        element: $("#firstName"),
+        errorPlacement: $("#firstName"),
+        error: errorMessage(ERROR.firstName, "firstName"),
+        emptyError: errorMessage(emptyError("First name"), "firstName"),
+        errorId: errorMessageId("firstName"),
+    },
+    lastName: {
+        element: $("#lastName"),
+        errorPlacement: $("#lastName"),
+        error: errorMessage(ERROR.lastName, "lastName"),
+        emptyError: errorMessage(emptyError("Last name"), "lastName"),
+        errorId: errorMessageId("lastName"),
+    },
     username: {
         element: $("#username"),
+        errorPlacement: $("#username"),
         error: errorMessage(ERROR.username, "username"),
         emptyError: errorMessage(emptyError("username"), "username"),
         errorId: errorMessageId("username"),
     },
     email: {
         element: $("#email"),
+        errorPlacement: $("#email"),
         error: errorMessage(ERROR.email, "email"),
         emptyError: errorMessage(emptyError("email"), "email"),
         errorId: errorMessageId("email"),
     },
     password: {
         element: $("#password"),
+        errorPlacement: $("#passwordInput"),
         error: errorMessage(ERROR.password, "password"),
         emptyError: errorMessage(emptyError("password"), "password"),
         errorId: errorMessageId("password"),
@@ -101,20 +164,42 @@ const inputs = {
     },
     confirmPassword: {
         element: $("#confirmPassword"),
+        errorPlacement: $("#confirmPasswordInput"),
         error: errorMessage(ERROR.confirmPassword, "confirmPassword"),
         errorId: errorMessageId("confirmPassword"),
         toggle: $("#toggleViewConfirmPassword"),
     },
+    role: {
+        element: $("#role"),
+        parentId: "roleChoices",
+    },
+    gender: {
+        element: $("#gender"),
+        errorPlacement: $("#genderChoices"),
+        error: errorMessage(ERROR.gender, "gender"),
+        emptyError: errorMessage(emptyError("gender"), "gender"),
+        errorId: errorMessageId("gender"),
+        parentId: "genderChoices",
+    },
 };
 
 // Destructure
-const { username, email, password, confirmPassword } = inputs;
+const {
+    username,
+    email,
+    firstName,
+    lastName,
+    password,
+    confirmPassword,
+    role,
+    gender,
+} = inputs;
 
 // Ensure password confirmation matches
 const handleConfirmPassword = (passwordValue, confirmPasswordValue) => {
     const validConfirmPassword = confirmPasswordValue === passwordValue;
     if (!validConfirmPassword && $(confirmPassword.errorId).length === 0) {
-        $("#confirmPasswordInput").after(confirmPassword.error);
+        confirmPassword.errorPlacement.after(confirmPassword.error);
     } else if (validConfirmPassword && $(confirmPassword.errorId).length > 0) {
         $(confirmPassword.errorId).remove();
     }
@@ -123,16 +208,29 @@ const handleConfirmPassword = (passwordValue, confirmPasswordValue) => {
 // Form handler
 const formHandler = (event) => {
     // Check for form validity
-    const emailValue = getValue(email.element);
     const usernameValue = getValue(username.element);
+    const emailValue = getValue(email.element);
+    const firstNameValue = getValue(firstName.element);
+    const lastNameValue = getValue(lastName.element);
+    const genderValue = getValue(gender.element);
     const passwordValue = getValue(password.element);
+
     const validUsername = checkUsername(usernameValue);
     const validEmail = checkEmail(emailValue);
+    const validFirstName = checkFirstName(firstNameValue);
+    const validLastName = checkLastName(lastNameValue);
+    const validGender = checkGender(genderValue);
     const validPassword = checkPassword(passwordValue);
     const validConfirmPassword =
         getValue(confirmPassword.element) === passwordValue;
     const validForm =
-        validEmail && validUsername && validPassword && validConfirmPassword;
+        validUsername &&
+        validEmail &&
+        validFirstName &&
+        validLastName &&
+        validPassword &&
+        validGender &&
+        validConfirmPassword;
 
     // If invalid, prevent submission
     if (!validForm) {
@@ -141,7 +239,7 @@ const formHandler = (event) => {
         // Add errors to invalid fields
         showError(
             usernameValue,
-            username.element,
+            username.errorPlacement,
             validUsername,
             "username",
             username.error,
@@ -152,7 +250,7 @@ const formHandler = (event) => {
 
         showError(
             emailValue,
-            email.element,
+            email.errorPlacement,
             validEmail,
             "email",
             email.error,
@@ -162,8 +260,41 @@ const formHandler = (event) => {
         );
 
         showError(
+            firstNameValue,
+            firstName.errorPlacement,
+            validFirstName,
+            "First name",
+            firstName.error,
+            firstName.emptyError,
+            ERROR.firstName,
+            firstName.errorId
+        );
+
+        showError(
+            lastNameValue,
+            lastName.errorPlacement,
+            validLastName,
+            "Last name",
+            lastName.error,
+            lastName.emptyError,
+            ERROR.lastName,
+            lastName.errorId
+        );
+
+        showError(
+            genderValue,
+            gender.errorPlacement,
+            validGender,
+            "gender",
+            gender.error,
+            gender.emptyError,
+            ERROR.gender,
+            gender.errorId
+        );
+
+        showError(
             passwordValue,
-            $("#passwordInput"),
+            password.errorPlacement,
             validPassword,
             "password",
             password.error,

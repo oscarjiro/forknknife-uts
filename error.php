@@ -22,7 +22,7 @@ if (!isset($e) && !isset($error_scope)) {
 
 <body>
     <!-- Navbar -->
-    <?= navbar() ?>
+    <?= navbar(is_authenticated()) ?>
 
     <!-- Main -->
     <main class="flex flex-col w-full space-y-10">

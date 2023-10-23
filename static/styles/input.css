@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700;1,800;1,900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
 
 :root {
     /* NAVBAR HEIGHT */
@@ -12,7 +12,7 @@
 
     /* BASIC COLORS */
     --black-rgb: 24, 24, 24;
-    --white-rgb: 244, 244, 244;
+    --white-rgb: 244, 244, 232;
     --blue-rgb: 57, 106, 230;
     --red-rgb: 255, 69, 0;
     --gray-rgb: 128, 128, 128;
@@ -20,8 +20,8 @@
     --orange-rgb: 255, 121, 0;
 
     /* FOREGROUND AND BACKGROUND */
-    --fg-rgb: var(--white-rgb);
-    --bg-rgb: var(--black-rgb);
+    --fg-rgb: var(--black-rgb);
+    --bg-rgb: var(--white-rgb);
 
     /* PROGRESS COLORS */
     --notstarted-rgb: var(--gray-rgb);
@@ -45,20 +45,20 @@
 
     * {
         @apply selection:bg-[rgb(var(--fg-rgb))]
-                selection:text-[rgb(var(--bg-rgb))];
+                selection:text-[rgb(var(--bg-rgb))]
+                scroll-smooth;
     }
 
     body {
         @apply bg-[rgb(var(--bg-rgb))] 
                 text-[rgb(var(--fg-rgb))]
                 overflow-x-hidden w-screen
-                font-["Space_Grotesk",sans-serif]
-                font-light;
+                font-["Space_Grotesk",sans-serif];
     }
 
     nav {
         @apply fixed top-0 left-0 w-screen h-[var(--navbar-height)] 
-                flex 
+                flex smooth
                 px-8 min-[400px]:px-12 
                 py-4 justify-between items-center
                 text-lg z-[100]
@@ -81,15 +81,16 @@
     }
 
     label {
-        @apply text-upperwide glow;
+        @apply text-upperwide;
     }
 
     input {
-        @apply focus:outline-none glow;
+        @apply focus:outline-none;
     }
 
     input[type="text"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="number"] {
         @apply border-b 
                 border-[rgb(var(--fg-rgb))] 
                 bg-transparent p-1;
@@ -99,6 +100,10 @@
         @apply w-full font-normal uppercase
                 rounded-lg py-2 px-5
                 text-[rgb(var(--black-rgb))];
+    }
+
+    input[type="file"] {
+        @apply hidden absolute;
     }
 
     select {
@@ -125,40 +130,47 @@
                 hover:bg-[rgb(var(--fg-rgb))] hover:text-[rgb(var(--bg-rgb))]
                 cursor-pointer;
     }
-
-    img {
-        animation: fadeIn 1s ease-in-out;
-    }
 }
 
 @layer components {
     /* NAVBAR */
     .nav-logo-ctr {
-        @apply flex items-center space-x-4 smooth hover:glow;
+        @apply flex items-center space-x-4 smooth;
         animation: slideIn 1.5s ease-in-out;
     }
 
     .nav-logo-icon {
-        @apply w-10 h-10 smooth group-hover:rotate-[20deg];
+        @apply w-8 h-8 smooth group-hover:rotate-[20deg];
         animation: fadeIn 1s ease-in-out 0.2s backwards;
     }
 
     .nav-logo-text {
         @apply hidden
-                min-[400px]:block
-                font-extrabold text-3xl tracking-tighter;
+                min-[550px]:block
+                text-3xl 
+                font-light tracking-widest;
         animation: fadeIn 1s ease-in-out;
     }
 
+    .nav-logo-label {
+        @apply text-upperwide text-inactive text-sm;
+    }
+
     .nav-link-ctr {
-        @apply flex items-center space-x-16;
+        @apply items-center space-x-16 hidden min-[850px]:flex;
     }
 
     .nav-link {
-        @apply font-light text-upperwide
+        @apply text-upperwide
                 text-inactive smooth hover:text-active
-                hover:glow
                 text-sm min-[400px]:text-base;
+    }
+
+    .nav-link-exp {
+        @apply text-upperwide
+                text-[rgba(var(--bg-rgb),0.7)]
+                hover:text-[rgb(var(--bg-rgb))] smooth
+                text-base;
     }
 
     /* ERROR */
@@ -182,8 +194,22 @@
 
     /* DATABASE ERROR */
     .database-error {
-        @apply text-center text-2xl font-normal 
-                py-4 px-52 space-y-4;
+        @apply text-center font-normal 
+                py-4 space-y-4
+                w-full
+                min-[600px]:px-8
+                min-[700px]:px-12
+                min-[800px]:px-16
+                min-[900px]:px-24
+                min-[1000px]:px-32
+                min-[1100px]:px-40
+                min-[1200px]:px-52
+                text-sm
+                min-[300px]:text-base
+                min-[350px]:text-lg
+                min-[400px]:text-xl
+                min-[500px]:text-xl
+                min-[600px]:text-2xl;
     }
 
     .database-error-msg {
@@ -200,7 +226,7 @@
     }
 
     .form-header {
-        @apply text-4xl font-bold tracking-tighter glow;
+        @apply text-4xl font-bold tracking-tighter;
     }
 
     /* INPUT */
@@ -217,13 +243,45 @@
         @apply w-6 h-6 cursor-pointer smooth hover:opacity-[0.7];
     }
 
-    .input-progress-choices-ctr {
+    .input-choices-ctr {
         @apply flex 
                 flex-col space-y-2
                 min-[500px]:flex-row
                 min-[500px]:items-center 
                 min-[500px]:space-y-0 
                 min-[500px]:space-x-4;
+    }
+
+    .prev-pict-ctr {
+        @apply flex flex-col space-y-2;
+    }
+
+    .prev-pict {
+        @apply w-full h-[300px] overflow-hidden rounded-lg
+                bg-[rgba(var(--black-rgb),0.5)]
+                text-[rgb(var(--white-rgb))]
+                cursor-pointer relative;
+    }
+
+    .prev-pict-icon {
+        @apply w-6 h-6 smooth group-hover:opacity-70 z-[1];
+    }
+
+    .prev-pict-text {
+        @apply smooth group-hover:opacity-70 z-[1];
+    }
+
+    .prev-pict-upload-btn {
+        @apply w-full h-full flex items-center justify-center space-x-2;
+    }
+
+    .prev-pict-img {
+        @apply absolute top-0 -left-0 w-full h-full object-cover
+                group-hover:brightness-[0.7] smooth;
+    }
+
+    .prev-pict-name {
+        @apply text-sm font-mono text-[rgba(var(--black-rgb),0.7)] text-center;
     }
 
     /* BUTTON */
@@ -289,10 +347,41 @@
                 selection:text-[rgb(var(--gray-rgb))];
     }
 
+    .button-black {
+        @apply border-[rgb(var(--black-rgb))] text-[rgb(var(--black-rgb))]
+                hover:bg-[rgb(var(--black-rgb))] hover:text-[rgb(var(--white-rgb))]
+                selection:bg-[rgb(var(--black-rgb))];
+    }
+
+    .button-black-active {
+        @apply border-[rgb(var(--black-rgb))] text-[rgb(var(--white-rgb))]
+                bg-[rgb(var(--black-rgb))]
+                hover:brightness-150 
+                hover:bg-[rgb(var(--black-rgb))]
+                hover:text-[rgb(var(--white-rgb))]
+                selection:bg-[rgb(var(--white-rgb))]
+                selection:text-[rgb(var(--black-rgb))];
+    }
+
+    .button-white {
+        @apply border-[rgb(var(--white-rgb))] text-[rgb(var(--white-rgb))]
+                hover:bg-[rgb(var(--white-rgb))] hover:text-[rgb(var(--black-rgb))]
+                selection:bg-[rgb(var(--white-rgb))];
+    }
+
+    .button-white-active {
+        @apply border-[rgb(var(--white-rgb))] text-[rgb(var(--black-rgb))]
+                bg-[rgb(var(--white-rgb))]
+                hover:bg-[rgb(var(--white-rgb))]
+                hover:text-[rgb(var(--black-rgb))]
+                selection:bg-[rgb(var(--black-rgb))]
+                selection:text-[rgb(var(--white-rgb))];
+    }
+
     /* MODAL */
     #blackout {
         @apply z-[100] fixed top-0 left-0 w-screen h-screen 
-                bg-[rgba(var(--bg-rgb),0.7)] 
+                bg-[rgba(var(--black-rgb),0.7)] 
                 flex items-center justify-center smooth;
     }
 
@@ -314,12 +403,13 @@
 
     /* GREETING */
     .greeting {
-        @apply text-4xl
-                min-[300px]:text-5xl
-                min-[350px]:text-6xl
-                min-[400px]:text-7xl
-                min-[500px]:text-8xl 
-                tracking-tighter font-bold glow-wide;
+        @apply text-2xl
+                min-[300px]:text-3xl
+                min-[350px]:text-4xl
+                min-[400px]:text-5xl
+                min-[500px]:text-6xl
+                min-[600px]:text-7xl
+                min-[700px]:text-8xl;
     }
 
     /* ADD */
@@ -357,8 +447,7 @@
         @apply text-active font-semibold 
                 text-lg
                 min-[300px]:text-xl
-                min-[500px]:text-2xl
-                glow;
+                min-[500px]:text-2xl;
     }
 
     .dashboard-footer {
@@ -382,8 +471,7 @@
 
     .section-title-item-ctr {
         @apply flex items-center
-                w-full overflow-x-scroll
-                min-[1300px]:justify-between;
+                w-full overflow-x-scroll;
     }
 
     .section-title-item {
@@ -391,9 +479,7 @@
                 border-b border-inactive
                 text-inactive hover:text-active
                 hover:border-active
-                smooth cursor-pointer pb-3 pr-16
-                min-[1300px]:pr-0 
-                min-[1300px]:min-w-fit min-[1300px]:w-full;
+                smooth cursor-pointer pb-3 pr-16;
     }
 
     .section-title-item-active {
@@ -424,65 +510,80 @@
                 rounded-full;
     }
 
-    /* TASK */
-    .empty-task {
-        @apply text-center glow
+    /* MENU */
+    .menu-container {
+        @apply grid 
+                min-[750px]:grid-cols-2
+                min-[1200px]:grid-cols-3 
+                gap-4 
+                smooth;
+    }
+
+    .empty-menu-container {
+        @apply smooth;
+    }
+
+    .empty-menu {
+        @apply text-center
                 text-sm 
                 min-[300px]:text-base
                 min-[350px]:text-lg
                 min-[400px]:text-xl
                 min-[500px]:text-2xl 
-                p-4 font-normal;
+                p-4 font-light;
     }
 
-    .task {
-        @apply bg-[rgb(var(--gray-rgb))] rounded-xl 
-                selection:text-[rgb(var(--gray-rgb))]
-                px-6 min-[350px]:px-8 py-4 w-full space-y-5
-                overflow-hidden smooth;
+    .menu-item {
+        @apply flex flex-col space-y-4
+                px-4
+                min-[350px]:px-6
+                min-[450px]:px-8
+                py-4
+                overflow-hidden border border-inactive 
+                rounded-xl smooth hover:scale-105
+                opacity-0;
     }
 
-    .task-header {
-        @apply flex items-center justify-between;
+    .menu-img-ctr {
+        @apply w-full h-[200px] rounded-lg 
+                overflow-hidden;
     }
 
-    .task-progress {
-        @apply text-upperwide font-normal
-                text-sm glow
+    .menu-img {
+        @apply w-full h-full object-cover smooth;
+    }
+
+    .menu-label-category {
+        @apply text-upperwide
+                text-xs
+                min-[350px]:text-sm
+                min-[400px]:text-base;
+    }
+
+    .menu-label-price {
+        @apply text-upperwide 
+                text-sm
                 min-[350px]:text-base
-                min-[400px]:text-lg;
+                min-[400px]:text-lg 
+                bg-[rgb(var(--fg-rgb))] 
+                text-[rgb(var(--bg-rgb))] 
+                w-fit px-3;
     }
 
-    .task-name {
-        @apply text-2xl glow
+    .menu-name {
+        @apply tracking-tighter font-bold
+                text-2xl 
                 min-[350px]:text-3xl
-                min-[500px]:text-4xl 
-                font-bold;
+                min-[400px]:text-4xl;
     }
 
-    .task-done-icon {
-        @apply min-w-[48px]
-                min-h-[48px]
-                w-10 h-10
-                min-[400px]:min-w-[48px]
-                min-[400px]:min-h-[48px]
-                min-[400px]:w-12 
-                min-[400px]:h-12
-                min-[500px]:min-w-[80px] 
-                min-[500px]:min-h-[80px]
-                min-[500px]:w-20
-                min-[500px]:h-20
-                cursor-pointer glow
-                smooth hover:scale-90;
-    }
-
-    .task-desc {
-        @apply text-sm glow
+    .menu-desc {
+        @apply text-sm 
                 min-[350px]:text-base
                 min-[400px]:text-lg;
     }
 
-    .task-footer {
+    .menu-footer {
         @apply flex 
                 flex-col space-y-3
                 text-sm
@@ -493,30 +594,31 @@
                 min-[450px]:justify-between;
     }
 
-    .task-action {
+    .menu-footer-category {
+        @apply text-upperwide text-sm text-inactive;
+    }
+
+    .menu-action {
         @apply flex items-center space-x-2;
     }
 
-    .task-action-icon {
+    .menu-action-icon {
         @apply w-5 h-5
                 min-[400px]:w-6 min-[400px]:h-6
-                cursor-pointer glow
+                cursor-pointer
                 smooth hover:rotate-[15deg];
     }
 }
 
 @layer utilities {
     /* GENERAL */
-    .glow {
-        @apply drop-shadow-[0_0_10px_rgba(255,255,255,0.5)];
-    }
-
-    .glow-wide {
-        @apply drop-shadow-[0_0_20px_rgba(255,255,255,0.5)];
-    }
-
     .smooth {
         @apply ease-in-out duration-300;
+    }
+
+    /* FONTS */
+    .serif {
+        @apply font-["Playfair_Display",serif];
     }
 
     /* TEXT */
@@ -534,7 +636,7 @@
     .text-invalid {
         @apply text-[rgb(var(--red-rgb))]
                 selection:bg-[rgb(var(--red-rgb))]
-                selection:text-[rgb(var(--fg-rgb))];
+                selection:text-[rgb(var(--white-rgb))];
     }
 
     .text-inactive {
@@ -566,20 +668,9 @@
         @apply border-[rgb(var(--fg-rgb))];
     }
 
-    /* TASK ITEM THEMES */
-    .task-waitingon {
-        @apply bg-[rgb(var(--waitingon-rgb))]
-                selection:text-[rgb(var(--waitingon-rgb))];
-    }
-
-    .task-inprogress {
-        @apply bg-[rgb(var(--inprogress-rgb))]
-                selection:text-[rgb(var(--inprogress-rgb))];
-    }
-
-    .task-done {
-        @apply bg-[rgb(var(--done-rgb))]
-                selection:text-[rgb(var(--done-rgb))];
+    /* ANIMATION */
+    .slide-in-smooth {
+        animation: slideInSmooth 1s ease-in-out forwards;
     }
 }
 
@@ -590,6 +681,18 @@
 
     to {
         transform: translateX(0px);
+    }
+}
+
+@keyframes slideInSmooth {
+    from {
+        opacity: 0;
+        transform: translateX(-25%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0%);
     }
 }
 

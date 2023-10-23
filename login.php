@@ -2,22 +2,17 @@
 
 require_once(__DIR__ . "/init.php");
 
-if (is_authenticated()) {
-    header("Location: index.php");
-    exit;
-}
-
 $post_req = $_SERVER["REQUEST_METHOD"] === "POST";
 
 if ($post_req) {
     // Collect POST data
-    $username = clean_data($_POST["username"]);
+    $user_id = clean_data($_POST["userId"]);
     $password = clean_data($_POST["password"]);
 
     // Check form data validity
-    $valid_username = strlen($username) > 0;
+    $valid_user_id = strlen($user_id) > 0;
     $valid_password = strlen($password) > 0;
-    $valid_form = $valid_username && $valid_password;
+    $valid_form = $valid_user_id && $valid_password;
 
     // Proceed to insert data if all is valid
     if ($valid_form) {
@@ -27,11 +22,11 @@ if ($post_req) {
 
         // Check if user exists
         $select_query = "SELECT * FROM User
-                        WHERE username = :username";
-
+                        WHERE username = :user_id
+                        OR email = :user_id";
         try {
             $stmt = $pdo->prepare($select_query);
-            $stmt->bindParam(":username", $username);
+            $stmt->bindParam(":user_id", $user_id);
             $stmt->execute();
         } catch (PDOException $e) {
             $query_success = false;
@@ -42,10 +37,13 @@ if ($post_req) {
 
         // Try to login
         if ($query_success && $valid_credentials) {
-            $hashed_password = $select_result["password"];
-            if ($valid_credentials = password_verify($password, $hashed_password)) {
+            $password_hashed = $select_result["password"];
+            $valid_credentials = password_verify($password, $password_hashed);
+            if ($valid_credentials) {
                 $_SESSION["is_authenticated"] = true;
-                $_SESSION["username"] = $username;
+                $_SESSION["username"] = $select_result["username"];
+                $_SESSION["is_admin"] = $select_result["is_admin"];
+                $_SESSION["name"] = $select_result["name"];
                 header("Location: index.php");
             }
         }
@@ -61,6 +59,7 @@ if ($post_req) {
 <head>
     <?= head("Login") ?>
     <script src="static/scripts/login.js" type="module"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
 <body>
@@ -76,11 +75,11 @@ if ($post_req) {
                 Welcome back!
             </h1>
 
-            <!-- Username -->
+            <!-- Username or Email -->
             <div class="input-ctr">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" spellcheck="false">
-                <?= ($post_req && !$valid_username) ? error_message(empty_error("username"), "username") : "" ?>
+                <label for="userId">Username or Email</label>
+                <input type="text" id="userId" name="userId" spellcheck="false">
+                <?= ($post_req && !$valid_user_id) ? error_message(empty_error("Username or email"), "userId") : "" ?>
             </div>
 
             <!-- Password -->
@@ -99,19 +98,22 @@ if ($post_req) {
                 <a href="forgot-password.php" class="text-link">Forgot password?</a>
             </div>
 
+            <!-- ReCAPTCHA v2 -->
+            <div class="w-full flex justify-center">
+                <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>"></div>
+            </div>
+
             <!-- Submit -->
-            <button type="submit" class="button-blue">Login</button>
+            <button id="registerButton" type="submit" class="button-black-active">Login</button>
 
             <!-- Form error message -->
             <?=
-            (isset($token_expired_message) || ($post_req && ($valid_form && (!$valid_credentials || !$query_success)))) ?
+            ($post_req && ($valid_form && (!$valid_credentials || !$query_success))) ?
                 ("<div class=\"text-center\">" .
                     error_message(
-                        isset($token_expired_message)
-                            ? $token_expired_message
-                            : (!$valid_credentials
-                                ? "Invalid username and/or password."
-                                : ERROR["general"]),
+                        !$valid_credentials
+                            ? "Invalid credentials."
+                            : ERROR["general"],
                         "form"
                     ) .
                     "</div>"

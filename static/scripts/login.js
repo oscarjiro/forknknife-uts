@@ -8,10 +8,11 @@ import {
     fadeInMain,
 } from "./utils.js";
 import { errorMessage, emptyError } from "./components.js";
+import { ERROR } from "./const.js";
 
 $(document).ready(() => {
-    // Username on input check
-    username.element.on("input", () => onlyFillInputHandler(username.errorId));
+    // userId on input check
+    userId.element.on("input", () => onlyFillInputHandler(userId.errorId));
 
     // Password on input check
     password.element.on("input", () => onlyFillInputHandler(password.errorId));
@@ -20,6 +21,16 @@ $(document).ready(() => {
     password.toggle.click(() =>
         toggleViewPassword(password.toggle, password.element)
     );
+
+    // Recaptcha
+    $(".recaptcha-checkbox-border").click(() => {
+        const recaptchaResponse = grecaptcha.getResponse();
+        const validRecaptcha = recaptchaResponse.length !== 0;
+        const formErrorMessageId = errorMessageId("form");
+        if (validRecaptcha && $(formErrorMessageId).length > 0) {
+            $(formErrorMessageId).remove();
+        }
+    });
 
     // Form submission handler
     $("#loginForm").submit((event) => formHandler(event));
@@ -30,16 +41,16 @@ $(document).ready(() => {
 
 // Elements
 const names = {
-    username: "username",
+    userId: "userId",
     password: "password",
 };
 
 const inputs = {
-    username: {
-        element: $(`#${names.username}`),
-        error: errorMessage(emptyError(names.username), names.username),
-        errorId: errorMessageId(names.username),
-        errorPlacement: $(`#${names.username}`),
+    userId: {
+        element: $(`#${names.userId}`),
+        error: errorMessage(emptyError("Username or email"), names.userId),
+        errorId: errorMessageId(names.userId),
+        errorPlacement: $(`#${names.userId}`),
     },
     password: {
         element: $(`#${names.password}`),
@@ -50,14 +61,16 @@ const inputs = {
     },
 };
 
-const { username, password } = inputs;
+const { userId, password } = inputs;
 
 // Form handler
 const formHandler = (event) => {
     // Check for form validity
-    const validUsername = !isEmpty(getValue(username.element));
+    const recaptchaResponse = grecaptcha.getResponse();
+    const validUserId = !isEmpty(getValue(userId.element));
     const validPassword = !isEmpty(getValue(password.element));
-    const validForm = validUsername && validPassword;
+    const validRecaptcha = recaptchaResponse.length !== 0;
+    const validForm = validUserId && validPassword && validRecaptcha;
 
     // If invalid, prevent submission
     if (!validForm) {
@@ -65,16 +78,34 @@ const formHandler = (event) => {
 
         // Add errors to invalid fields
         onlyFillShowError(
-            validUsername,
-            username.error,
-            username.errorPlacement,
-            username.errorId
+            validUserId,
+            userId.error,
+            userId.errorPlacement,
+            userId.errorId
         );
+
         onlyFillShowError(
             validPassword,
             password.error,
             password.errorPlacement,
             password.errorId
         );
+
+        const formErrorMessageId = errorMessageId("form");
+        const formErrorPlacement = $("#registerButton");
+        const formErrorElement = errorMessage(ERROR.recaptcha, "form");
+        if ($(formErrorMessageId).length === 0 && !validRecaptcha) {
+            formErrorPlacement.after(
+                `<div class="text-center">${formErrorElement}</div>`
+            );
+        } else if (
+            $(formErrorMessageId).length > 0 &&
+            !validRecaptcha &&
+            $(formErrorMessageId).text() !== ERROR.recaptcha
+        ) {
+            $(formErrorMessageId).text(ERROR.recaptcha);
+        } else if ($(formErrorMessageId).length > 0 && validRecaptcha) {
+            $(formErrorMessageId).remove();
+        }
     }
 };

@@ -4,7 +4,7 @@ require_once(__DIR__ . "/init.php");
 
 // Ensure token is present
 $param_token = isset($_GET["token"]) ? clean_data($_GET["token"]) : null;
-if (!$param_token || is_authenticated()) {
+if (!$param_token) {
     header("Location: index.php");
     exit;
 }

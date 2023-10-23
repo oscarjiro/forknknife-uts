@@ -2,11 +2,6 @@
 
 require_once(__DIR__ . "/init.php");
 
-if (is_authenticated()) {
-    header("Location: index.php");
-    exit;
-}
-
 ?>
 
 
