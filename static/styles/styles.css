@@ -2963,12 +2963,6 @@ button:hover {
     margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
-.space-y-1 > :not([hidden]) ~ :not([hidden]) {
-    --tw-space-y-reverse: 0;
-    margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
-    margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
-}
-
 .space-y-10 > :not([hidden]) ~ :not([hidden]) {
     --tw-space-y-reverse: 0;
     margin-top: calc(2.5rem * calc(1 - var(--tw-space-y-reverse)));
@@ -3461,6 +3455,10 @@ button:hover {
     border-color: rgb(var(--bg-rgb));
 }
 
+.border-\[rgb\(var\(--black-rgb\)\)\] {
+    border-color: rgb(var(--black-rgb));
+}
+
 .border-\[rgb\(var\(--fg-rgb\)\)\] {
     border-color: rgb(var(--fg-rgb));
 }
@@ -3496,6 +3494,10 @@ button:hover {
 
 .bg-\[rgba\(var\(--fg-rgb\)\2c 0\.7\)\] {
     background-color: rgba(var(--fg-rgb), 0.7);
+}
+
+.bg-\[rgb\(var\(--white-rgb\)\)\] {
+    background-color: rgb(var(--white-rgb));
 }
 
 .decoration-slice {
@@ -3829,10 +3831,6 @@ button:hover {
 
 .tracking-tighter {
     letter-spacing: -0.05em;
-}
-
-.tracking-widest {
-    letter-spacing: 0.1em;
 }
 
 .text-\[\#336699\]\/\[\.35\] {

@@ -13,6 +13,7 @@ if ($post_req) {
     $last_name = ucwords(clean_data($_POST["lastName"]));
     $role = strtolower(clean_data($_POST["role"]));
     $gender = ucfirst(clean_data($_POST["gender"]));
+    $date = clean_data($_POST["date"]);
     $password = clean_data($_POST["password"]);
     $confirm_password = clean_data($_POST["confirmPassword"]);
 
@@ -22,11 +23,12 @@ if ($post_req) {
     $valid_first_name = strlen($first_name) > 0 && strlen($first_name) <= FIRST_NAME_MAX_LENGTH;
     $valid_last_name = strlen($last_name) > 0 && strlen($last_name) <= LAST_NAME_MAX_LENGTH;
     $valid_gender = $gender === "M" || $gender === "F";
+    $valid_date = preg_match(ISO_8601_DATE_REGEXP, $date);
     $valid_password = preg_match(PASSWORD_REGEXP, $password);
     $valid_confirm_password = $password === $confirm_password;
 
     // Proceed to insert data if all is valid
-    if ($valid_form = $valid_username && $valid_email && $valid_first_name && $valid_last_name && $valid_gender && $valid_password && $valid_confirm_password) {
+    if ($valid_form = $valid_username && $valid_email && $valid_first_name && $valid_last_name && $valid_gender && $valid_date && $valid_password && $valid_confirm_password) {
         // Boolean
         $user_exists = false;
         $email_exists = false;
@@ -34,7 +36,7 @@ if ($post_req) {
 
         // Check if user exists
         $check_username_query = "SELECT * FROM User
-                        WHERE username = :username";
+                                WHERE username = :username";
         try {
             $stmt = $pdo->prepare($check_username_query);
             $stmt->bindParam(":username", $username, PDO::PARAM_STR);
@@ -48,7 +50,7 @@ if ($post_req) {
 
         // Check if email exists
         $check_email_query = "SELECT * FROM User
-                        WHERE username = :email";
+                            WHERE username = :email";
         try {
             $stmt = $pdo->prepare($check_email_query);
             $stmt->bindParam(":email", $email, PDO::PARAM_STR);
@@ -65,9 +67,9 @@ if ($post_req) {
             $password_hashed = password_hash($password, PASSWORD_DEFAULT);
             $is_admin = $role === "admin" ? true : false;
             $insert_query = "INSERT INTO User 
-                                (username, email, first_name, last_name, password, is_admin, gender)
+                                (username, email, first_name, last_name, password, is_admin, gender, birthdate)
                             VALUES 
-                                (:username, :email, :first_name, :last_name, :password, :is_admin, :gender)";
+                                (:username, :email, :first_name, :last_name, :password, :is_admin, :gender, :birthdate)";
             try {
                 $stmt = $pdo->prepare($insert_query);
                 $stmt->bindParam(":username", $username, PDO::PARAM_STR);
@@ -78,6 +80,7 @@ if ($post_req) {
                 $stmt->bindParam(":password", $password_hashed, PDO::PARAM_STR);
                 $stmt->bindParam(":is_admin", $is_admin, PDO::PARAM_BOOL);
                 $stmt->bindParam(":gender", $gender, PDO::PARAM_STR);
+                $stmt->bindParam(":birthdate", $date, PDO::PARAM_STR);
                 $stmt->execute();
                 $_SESSION["is_authenticated"] = true;
                 $_SESSION["is_admin"] = $is_admin;
@@ -165,6 +168,13 @@ if ($post_req) {
                     <button type="button" id="genderChoiceFemale" data-value="F" class="button-black">Female</button>
                 </div>
                 <?= ($post_req && !$valid_gender) ? error_message(is_empty($gender) ? empty_error("gender") : ERROR["gender"], "gender") : "" ?>
+            </div>
+
+            <!-- Birthdate -->
+            <div class="input-ctr">
+                <label for="date">Birthdate</label>
+                <input type="date" id="date" name="date" class="border border-[rgb(var(--black-rgb))] bg-[rgb(var(--white-rgb))]">
+                <?= ($post_req && !$valid_date) ? error_message(is_empty($date) ? empty_error("Birthdate") : "Invalid date.", "date") : "" ?>
             </div>
 
             <!-- Password -->

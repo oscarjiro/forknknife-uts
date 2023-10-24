@@ -175,21 +175,7 @@ export const checkImageType = (type) => type.startsWith("image/");
 export const checkImageSize = (size) => size <= MENU_IMAGE_MAX_SIZE;
 
 // Check date in ISO 8601 format
-export const checkDate = (date) => {
-    // Ensure in YYYY-MM-DD format
-    if (!ISO_8601_DATE_REGEXP.test(date)) return false;
-
-    // Get input and today's date as date objects
-    const inputDate = new Date(date);
-    const today = new Date();
-
-    // Set both dates to midnight to strictly compare dates
-    inputDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    // Compare if date is at least today
-    return inputDate >= today;
-};
+export const checkDate = (date) => ISO_8601_DATE_REGEXP.test(date);
 
 /* DOM MANIPULATION */
 // Fade in main

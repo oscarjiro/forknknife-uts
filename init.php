@@ -74,6 +74,7 @@ $create_user_query = "CREATE TABLE IF NOT EXISTS User (
                         gender CHAR(1) NOT NULL CHECK (gender IN ('M', 'F')),
                         reset_token_hash VARCHAR(64) UNIQUE,
                         reset_token_expires_at DATETIME,
+                        birthdate DATE NOT NULL,
                         CONSTRAINT validate_username CHECK (
                             username REGEXP :username_regexp
                         ),

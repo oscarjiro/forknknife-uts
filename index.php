@@ -7,6 +7,19 @@ $is_authenticated = is_authenticated();
 $username = (isset($_SESSION["username"]) && $_SESSION["username"]) ? $_SESSION["username"] : null;
 $is_admin = isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false;
 
+// Get birthday
+$get_birthday = "SELECT birthdate FROM User WHERE username = :username";
+try {
+    $stmt = $pdo->prepare($get_birthday);
+    $stmt->bindParam(":username", $username, PDO::PARAM_STR);
+    $stmt->execute();
+    $birthday_fetch = true;
+    $birthdate_fetch_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    $birthdate = $birthdate_fetch_result["birthdate"];
+} catch (PDOException $e) {
+    $birthday_fetch = false;
+}
+
 ?>
 
 
@@ -37,7 +50,7 @@ $is_admin = isset($_SESSION["is_admin"]) ? $_SESSION["is_admin"] : false;
                 <?php
                 } else {
                 ?>
-                    <span class=""> <?= greet() ?>,</span> <span class="serif italic font-extralight tracking-tighter"><?= $username ?></span>
+                    <span class=""> <?= $birthday_fetch && checkSameDate($birthdate) ? "Happy birthday" : greet() ?>,</span> <span class="serif italic font-extralight tracking-tighter"><?= $username ?></span>
                 <?php
                 }
                 ?>

@@ -96,3 +96,8 @@ function to_currency($price)
 
     return 'IDR ' . $formatted_price;
 }
+
+function checkSameDate($date)
+{
+    return $date === date("Y-m-d");
+}

@@ -13,6 +13,7 @@ import {
     checkLastName,
     checkGender,
     inputChoicesEventListener,
+    checkDate,
 } from "./utils.js";
 import { errorMessage, emptyError } from "./components.js";
 
@@ -74,6 +75,18 @@ $(document).ready(() => {
             gender.error,
             ERROR.gender,
             gender.errorId
+        )
+    );
+
+    // Birthdate on input check
+    birthdate.element.on("input", () =>
+        onInputHandler(
+            birthdate.element,
+            birthdate.errorPlacement,
+            checkDate,
+            birthdate.error,
+            ERROR.birthdate,
+            birthdate.errorId
         )
     );
 
@@ -181,6 +194,13 @@ const inputs = {
         errorId: errorMessageId("gender"),
         parentId: "genderChoices",
     },
+    birthdate: {
+        element: $("#date"),
+        errorPlacement: $("#date"),
+        error: errorMessage("Invalid date.", "date"),
+        emptyError: errorMessage(emptyError("Birthdate"), "date"),
+        errorId: errorMessageId("date"),
+    },
 };
 
 // Destructure
@@ -193,6 +213,7 @@ const {
     confirmPassword,
     role,
     gender,
+    birthdate,
 } = inputs;
 
 // Ensure password confirmation matches
@@ -212,6 +233,7 @@ const formHandler = (event) => {
     const emailValue = getValue(email.element);
     const firstNameValue = getValue(firstName.element);
     const lastNameValue = getValue(lastName.element);
+    const birthdateValue = getValue(birthdate.element);
     const genderValue = getValue(gender.element);
     const passwordValue = getValue(password.element);
 
@@ -220,6 +242,7 @@ const formHandler = (event) => {
     const validFirstName = checkFirstName(firstNameValue);
     const validLastName = checkLastName(lastNameValue);
     const validGender = checkGender(genderValue);
+    const validBirthdate = checkDate(birthdateValue);
     const validPassword = checkPassword(passwordValue);
     const validConfirmPassword =
         getValue(confirmPassword.element) === passwordValue;
@@ -279,6 +302,17 @@ const formHandler = (event) => {
             lastName.emptyError,
             ERROR.lastName,
             lastName.errorId
+        );
+
+        showError(
+            birthdateValue,
+            birthdate.errorPlacement,
+            validBirthdate,
+            "Birthdate",
+            birthdate.error,
+            birthdate.emptyError,
+            "Invalid date.",
+            birthdate.errorId
         );
 
         showError(
