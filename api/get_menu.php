@@ -36,7 +36,7 @@ try {
                                     WHEN category = 'Beverages' THEN 7
                                     WHEN category = 'Coffee & Tea' THEN 8
                                     ELSE 9 
-                                END DESC";
+                                END";
 
     $stmt = $pdo->prepare($select_all_menu_query);
     $stmt->execute();
@@ -59,5 +59,6 @@ echo json_encode([
     "ok" => true,
     "result" => $result,
     "isAdmin" => $is_admin,
+    "isAuthenticated" => is_authenticated(),
     "error" => "",
 ]);

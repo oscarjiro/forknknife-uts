@@ -59,7 +59,7 @@
     nav {
         @apply fixed top-0 left-0 w-screen h-[var(--navbar-height)] 
                 flex smooth
-                px-8 min-[400px]:px-12 
+                px-6 min-[300px]:px-8 min-[400px]:px-12 
                 py-4 justify-between items-center
                 text-lg z-[100]
                 bg-[rgba(var(--bg-rgb),0.7)]
@@ -67,7 +67,7 @@
     }
 
     main {
-        @apply px-8 min-[400px]:px-12  
+        @apply px-6 min-[300px]:px-8 min-[400px]:px-12  
                 py-8 mt-[var(--navbar-height)]
                 overflow-x-hidden
                 min-h-[calc(100vh-var(--navbar-height))]
@@ -540,8 +540,7 @@
                 min-[450px]:px-8
                 py-4
                 overflow-hidden border border-inactive 
-                rounded-xl smooth hover:scale-105
-                opacity-0;
+                rounded-xl smooth hover:scale-105;
     }
 
     .menu-img-ctr {
@@ -659,6 +658,44 @@
                 bg-[rgb(var(--bg-rgb))];
     }
 
+    .text-general-header {
+        @apply text-base
+                min-[300px]:text-lg
+                min-[350px]:text-xl 
+                min-[400px]:text-2xl
+                min-[500px]:text-3xl
+                min-[600px]:text-4xl;
+    }
+
+    .text-general-body {
+        @apply text-sm
+                min-[300px]:text-base
+                min-[400px]:text-lg
+                min-[600px]:text-xl;
+    }
+
+    .text-general-small {
+        @apply text-[10px]
+                min-[300px]:text-[11px]
+                min-[400px]:text-sm
+                min-[600px]:text-base;
+    }
+
+    /* ICON SIZE */
+    .big-icon-general {
+        @apply w-4 h-4
+                min-[350px]:w-5
+                min-[350px]:h-5
+                min-[350px]:w-6
+                min-[350px]:h-6
+                min-[400px]:w-8 
+                min-[400px]:h-8
+                min-[500px]:w-10 
+                min-[500px]:h-10
+                min-[600px]:w-12 
+                min-[600px]:h-12;
+    }
+
     /* BORDERS */
     .border-inactive {
         @apply border-[rgba(var(--fg-rgb),0.4)];
@@ -670,7 +707,7 @@
 
     /* ANIMATION */
     .slide-in-smooth {
-        animation: slideInSmooth 1s ease-in-out forwards;
+        animation: slideInSmooth 1s ease-in-out;
     }
 }
 

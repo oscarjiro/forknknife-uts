@@ -103,7 +103,7 @@ $create_menu_query = "CREATE TABLE IF NOT EXISTS Menu (
                         description VARCHAR(" . MENU_DESCRIPTION_MAX_LENGTH . ") NOT NULL,
                         category VARCHAR(25) NOT NULL CHECK (category IN (" . $valid_categories_string . ")),
                         price DECIMAL(10, 2) NOT NULL CHECK (price > 0),
-                        image_name VARCHAR(255) NOT NULL
+                        image_name VARCHAR(255) NOT NULL UNIQUE
                     )";
 try {
     $stmt = $pdo->prepare($create_menu_query);
@@ -171,7 +171,7 @@ else {
 }
 
 // If authenticated but in non authenticated page, throw to index
-if (is_authenticated() && $route !== "index.php" && in_array($route, UNAUTHENTICATED_ROUTES)) {
+if (is_authenticated() && in_array($route, UNAUTHENTICATED_ROUTES)) {
     header("Location: index.php");
     exit;
 }

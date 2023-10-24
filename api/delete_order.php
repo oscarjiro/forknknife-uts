@@ -4,6 +4,9 @@
 require_once(__DIR__ . "/../init.php");
 header("Content-Type: application/json");
 
+// Set general error
+$database_error = "An error occured while trying to delete an order.";
+
 // Ensure authenticated
 if (!is_authenticated()) {
     echo json_encode([
@@ -13,12 +16,13 @@ if (!is_authenticated()) {
     return;
 }
 
-// Ensure admin
+// Ensure not admin
+$username = $_SESSION["username"];
 $is_admin = $_SESSION["is_admin"];
-if (!$is_admin) {
+if ($is_admin) {
     echo json_encode([
         "ok" => false,
-        "error" => ["message" => "Only admins can delete a menu item."],
+        "error" => ["message" => "Only users can delete a menu item."],
     ]);
     return;
 }
@@ -32,62 +36,62 @@ if ($_SERVER["REQUEST_METHOD"] !== "DELETE" && $_SERVER["REQUEST_METHOD"] !== "P
     return;
 }
 
-// Get menu ID
+// Get order ID 
 $data = json_decode(file_get_contents("php://input"), true);
-$menu_id = isset($data["menuId"]) ? clean_data($data["menuId"]) : null;
-if ($data === null || !$menu_id) {
+$order_id = isset($data["orderId"]) ? (int) clean_data($data["orderId"]) : null;
+if ($data === null || !$order_id) {
     echo json_encode([
         "ok" => false,
-        "error" => ["message" => "No menu specified to delete."],
+        "error" => ["message" => "No order specified to delete."],
     ]);
     return;
 }
 
-// Check if menu exists
+// Check if order exists
+$select_order_query = "SELECT * FROM `Order` 
+                    WHERE id = :order_id";
 try {
-    $select_menu_query = "SELECT * FROM Menu 
-                        WHERE id = :menu_id";
-    $stmt = $pdo->prepare($select_menu_query);
-    $stmt->bindParam(":menu_id", $menu_id, PDO::PARAM_INT);
+    $stmt = $pdo->prepare($select_order_query);
+    $stmt->bindParam(":order_id", $order_id, PDO::PARAM_INT);
     $stmt->execute();
 } catch (Exception $e) {
     echo json_encode([
         "ok" => false,
         "error" => [
-            "scope" => "An error occured while trying to delete menu.",
+            "scope" => $database_error,
+            "message" => $e->getMessage()
+        ],
+    ]);
+    return;
+}
+$select_order_result = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$select_order_result || count($select_order_result) === 0) {
+    echo json_encode([
+        "ok" => false,
+        "error" => ["message" => "Order does not exist."],
+    ]);
+    return;
+}
+
+// Delete order
+$delete_order_query = "DELETE FROM `Order` 
+                    WHERE id = :order_id";
+try {
+    $stmt = $pdo->prepare($delete_order_query);
+    $stmt->bindParam(":order_id", $order_id, PDO::PARAM_INT);
+    $stmt->execute();
+} catch (Exception $e) {
+    echo json_encode([
+        "ok" => false,
+        "error" => [
+            "scope" => $database_error,
             "message" => $e->getMessage()
         ],
     ]);
     return;
 }
 
-// Ensure menu exists
-if (count($result = $stmt->fetch(PDO::FETCH_ASSOC)) === 0) {
-    echo json_encode([
-        "ok" => false,
-        "error" => ["message" => "Menu does not exist."],
-    ]);
-    return;
-}
-
-// Delete menu
-try {
-    $delete_menu_query = "DELETE FROM Menu 
-                        WHERE id = :menu_id";
-    $stmt = $pdo->prepare($delete_menu_query);
-    $stmt->bindParam(":menu_id", $menu_id, PDO::PARAM_INT);
-    $stmt->execute();
-} catch (Exception $e) {
-    echo json_encode([
-        "ok" => false,
-        "error" => [
-            "scope" => "An error occured while trying to delete task.",
-            "message" => $e->getMessage()
-        ],
-    ]);
-    return;
-}
-
+// Return response
 echo json_encode([
     "ok" => true,
     "error" => "",

@@ -18,6 +18,7 @@ import {
     passwordToggleHide,
     passwordToggleVisible,
 } from "./components.js";
+import { getOrder } from "./api.js";
 
 /* STRING MANIPULATION */
 // Uppercase every first letter of a word
@@ -55,6 +56,21 @@ export const toCurrency = (price) => {
     });
 
     return `IDR ${formatter.format(price)}`;
+};
+
+// Format timestamp
+export const formatTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const options = {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        hour12: true,
+    };
+    return date.toLocaleString(undefined, options);
 };
 
 // Convert ISO 8601 to formatted date
@@ -401,4 +417,15 @@ export const previewImage = (
     if (!uploadTextElement.attr("class").includes("opacity-0")) {
         uploadTextElement.addClass("opacity-0");
     }
+};
+
+/* OTHER */
+export const clearQueryParam = () => {
+    // Use history.replaceState to update the URL without refreshing
+    history.replaceState(null, "", window.location.pathname);
+};
+
+export const getParam = (paramKey) => {
+    const url = new URLSearchParams(window.location.search);
+    return url.get(paramKey);
 };

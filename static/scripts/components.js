@@ -33,9 +33,14 @@ const editIcon = `
         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
     </svg>
 `;
-const addIcon = `
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="menu-action-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+export const addIcon = (id) => `
+    <svg id="addQuantityMenu${id}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="menu-action-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+`;
+export const minusIcon = (id) => `
+    <svg id="minusQuantityMenu${id}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="menu-action-icon">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
     </svg>
 `;
 
@@ -78,11 +83,19 @@ export const menuItem = (
             </div>
         `
         : "";
+    const menuOrderButton = isAdmin
+        ? ""
+        : `
+        <div id="orderMenuItem${id}" class="add group">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="add-icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <div class="add-text w-fit">Order menu</div>
+        </div>
+    `;
 
     return `
-        <div id="menuItem${id}" class="menu-item ${
-        !isAdmin ? "cursor-pointer" : ""
-    }">
+        <div id="menuItem${id}" class="menu-item opacity-0">
             <div class="menu-img-ctr">
                 <img src="static/menu_images/${image_name}" alt="${name}" class="menu-img">
             </div>
@@ -93,6 +106,7 @@ export const menuItem = (
                 </div>
             </div>
             ${menuDetails}
+            ${menuOrderButton}
         </div>
     `;
 };

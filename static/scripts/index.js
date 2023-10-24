@@ -1,18 +1,29 @@
-import { getMenu, deleteMenu, taskAction } from "./api.js";
-import { emptyMenuMessage, systemError, menuItem } from "./components.js";
+import { getMenu, deleteMenu, getOrder, orderMenu } from "./api.js";
+import {
+    emptyMenuMessage,
+    systemError,
+    menuItem,
+    addIcon,
+    minusIcon,
+} from "./components.js";
 import { MENU_CATEGORIES } from "./const.js";
 import {
-    capitalizeFirst,
     checkMenuCategory,
+    clearQueryParam,
     closeModal,
     fadeInMain,
+    getParam,
     popUpModal,
     toCamelCase,
+    toCurrency,
 } from "./utils.js";
 
 $(document).ready(async () => {
     // Load all menu
     await activatePage("All", true);
+
+    // Load order
+    await loadOrderCount();
 
     // Add event listener to each section
     for (const section in sections) {
@@ -24,6 +35,12 @@ $(document).ready(async () => {
             !sameSection && activatePage(section);
         });
     }
+
+    // Open menu if there is param
+    const paramId = parseInt(getParam("id"));
+    $(`#orderMenuItem${paramId}`)?.[0]?.scrollIntoView();
+    $(`#orderMenuItem${paramId}`).click();
+    clearQueryParam();
 
     // Fade in main
     fadeInMain();
@@ -40,6 +57,8 @@ const states = {
     },
     menu: [],
     isAdmin: false,
+    isAuthenticated: false,
+    orderId: null,
 };
 
 // Sections
@@ -113,6 +132,7 @@ const loadMenu = async () => {
     // Otherwise, set menu state as result
     states.menu = result.result;
     states.isAdmin = result.isAdmin;
+    states.isAuthenticated = result.isAuthenticated;
 
     // Return result
     return result;
@@ -150,6 +170,33 @@ const confirmDeleteMenu = (menuId, menuName) => {
 
     // Add event listener to confirm button
     $("#confirmAction").click(acceptDeleteMenu);
+};
+
+// Order menu
+const confirmOrderMenu = async (menuId, quantity) => {
+    const response = await orderMenu(menuId, quantity, states.orderId);
+    if (!response.ok) {
+        console.error(response.error);
+        return;
+    }
+    await loadOrderCount();
+};
+
+// Load order count
+const loadOrderCount = async () => {
+    const response = await getOrder(states.orderId);
+    if (!response.ok) {
+        console.error(response.error);
+        return;
+    }
+
+    // Get result
+    const result = response.result;
+    states.orderId = result.orderId;
+
+    // Update count
+    $("#cartItemCount").text(result.totalQuantity);
+    $("#cartItemCountExp").text(result.totalQuantity);
 };
 
 // Activate page
@@ -209,16 +256,148 @@ const activatePage = async (section = null, reload = false) => {
                     $(`#deleteMenu${id}`).click(() =>
                         confirmDeleteMenu(id, name)
                     );
+                } else {
+                    $(`#orderMenuItem${id}`).click(() => {
+                        // Set local states
+                        const itemStates = {
+                            price: price,
+                            totalPrice: price,
+                            quantity: 1,
+                        };
+
+                        // Pop up blackout and modal
+                        $("body").append(`
+                            <section id="blackout" class="hidden opacity-0">
+                                <div class="flex flex-col space-y-5 bg-[rgba(var(--fg-rgb),0.7)] backdrop-blur-lg text-[rgb(var(--bg-rgb))] p-12 text-xl rounded-xl overflow-hidden">
+                                    <div>
+                                        <div class="menu-label-category">
+                                            ${category}
+                                        </div>
+                                        <div class="menu-name">
+                                            ${name}
+                                        </div>
+                                    </div>
+                                    <div class="h-[200px] w-full overflow-hidden rounded-lg">
+                                        <img src="static/menu_images/${image_name}" class="w-full h-full object-cover" />
+                                    </div>
+                                    <div class="text-lg font-light">
+                                        ${description}
+                                    </div>
+                                    <div class="w-full flex items-center justify-between">
+                                        ${minusIcon(id)}
+                                        <div id="quantityMenuItem${id}">${
+                            itemStates.quantity
+                        }</div>
+                                        ${addIcon(id)}
+                                    </div>
+                                    <div class="flex items-center justify-between space-x-4">
+                                        <div class="text-upperwide flex justify-center py-2 px-4 border border-[rgb(var(--bg-rgb))] rounded-lg font-bold">
+                                            IDR
+                                        </div>
+                                        <div id="totalPriceMenuItem${id}" class="w-full py-2 text-center font-light bg-[rgb(var(--bg-rgb))] text-[rgb(var(--fg-rgb))] text-upperwide rounded-lg">
+                                            ${toCurrency(
+                                                itemStates.totalPrice
+                                            ).replace("IDR ", "")}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-6 justify-between">
+                                        <button id="cancelAddButton" class="button-red">
+                                            Cancel
+                                        </button>
+                                        <button id="confirmOrderMenu${id}" class="button-white">
+                                            Order
+                                        </button>
+                                    </div>
+                                </div>
+                            </section>
+                        `);
+
+                        // Show blackout
+                        $("#blackout").removeClass("hidden");
+                        setTimeout(
+                            () => $("#blackout").removeClass("opacity-0"),
+                            100
+                        );
+
+                        // Update state and UI
+                        const updateStateAndUI = () => {
+                            itemStates.totalPrice =
+                                itemStates.price * itemStates.quantity;
+
+                            // Update UI
+                            $(`#quantityMenuItem${id}`).text(
+                                itemStates.quantity
+                            );
+                            $(`#totalPriceMenuItem${id}`).text(
+                                toCurrency(itemStates.totalPrice).replace(
+                                    "IDR ",
+                                    ""
+                                )
+                            );
+                        };
+
+                        // Add quantity
+                        const addQuantity = () => {
+                            itemStates.quantity++;
+                            updateStateAndUI();
+                        };
+                        $(`#addQuantityMenu${id}`).click(addQuantity);
+
+                        // Minus quantity
+                        const minusQuantity = () => {
+                            // Update state
+                            itemStates.quantity =
+                                itemStates.quantity <= 1
+                                    ? 1
+                                    : itemStates.quantity - 1;
+                            updateStateAndUI();
+                        };
+                        $(`#minusQuantityMenu${id}`).click(minusQuantity);
+
+                        // Confirm order menu
+                        const confirmOrderItem = async () => {
+                            if (!states.isAuthenticated) {
+                                window.location.href = `login.php?next=index.php?id=${id}`;
+                            }
+                            await confirmOrderMenu(id, itemStates.quantity);
+                            closeBlackout();
+                        };
+                        $(`#confirmOrderMenu${id}`).click(confirmOrderItem);
+
+                        // Close blackout event listener
+                        const closeBlackout = () => {
+                            $("#blackout").addClass("opacity-0");
+                            setTimeout(() => $("#blackout").remove(), 300);
+
+                            // Detach event listeners
+                            $(`#addQuantityMenu${id}`).off(
+                                "click",
+                                addQuantity
+                            );
+                            $(`#minusQuantityMenu${id}`).off(
+                                "click",
+                                minusQuantity
+                            );
+                            $("#cancelAddButton").off("click", closeBlackout);
+                            $(`#confirmOrderMenu${id}`).off(
+                                "click",
+                                confirmOrderMenu
+                            );
+                        };
+                        $("#cancelAddButton").click(closeBlackout);
+                    });
                 }
             }
         }
     );
 
+    // On scroll show
     document.querySelectorAll(".menu-item").forEach((menu) => {
         const io = new IntersectionObserver((entries, observer) => {
             entries.forEach((entry) => {
                 if (entry.isIntersecting) {
                     menu.classList.add("slide-in-smooth");
+                    menu.classList.remove("opacity-0");
                     observer.disconnect();
                 }
             });
@@ -226,23 +405,6 @@ const activatePage = async (section = null, reload = false) => {
 
         io.observe(menu);
     });
-
-    /**
-     // Add intersection observer to each task
-    const showOnScroll = (task) => {
-        const io = new IntersectionObserver((entries, observer) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    task.classList.add("slide-right-smooth");
-                    observer.disconnect();
-                }
-            });
-        });
-
-        io.observe(task);
-    };
-    document.querySelectorAll(".task").forEach(showOnScroll);
-     */
 
     // Update menu count if reload is true
     updateMenuCount();

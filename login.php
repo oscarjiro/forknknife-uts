@@ -2,10 +2,12 @@
 
 require_once(__DIR__ . "/init.php");
 
-$post_req = $_SERVER["REQUEST_METHOD"] === "POST";
+// Collect GET param if available
+$param_next = isset($_GET["next"]) ? $_GET["next"] : null;
 
+$post_req = $_SERVER["REQUEST_METHOD"] === "POST";
 if ($post_req) {
-    // Collect POST data
+    // Collect POST datammmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm,mnj,mmmm mmmmmmmmmmm,.,mnj,
     $user_id = clean_data($_POST["userId"]);
     $password = clean_data($_POST["password"]);
 
@@ -44,7 +46,7 @@ if ($post_req) {
                 $_SESSION["username"] = $select_result["username"];
                 $_SESSION["is_admin"] = $select_result["is_admin"];
                 $_SESSION["name"] = $select_result["name"];
-                header("Location: index.php");
+                header("Location: " . ($param_next ? $param_next : "index.php"));
             }
         }
     }
@@ -69,7 +71,7 @@ if ($post_req) {
     <!-- Main -->
     <main class="form-main opacity-0">
         <!-- Form -->
-        <form id="loginForm" action="login.php" method="post">
+        <form id="loginForm" action="login.php<?= $param_next ? "?next=$param_next" : "" ?>" method="post">
             <!-- Heading -->
             <h1 class="form-header">
                 Welcome back!
@@ -122,7 +124,7 @@ if ($post_req) {
 
             <!-- Register redirect -->
             <div class="text-center">
-                Don't have an account yet? <a href="register.php" class="text-link">Register here.</a>
+                Don't have an account yet? <a href="register.php<?= $param_next ? "?next=$param_next" : "" ?>" class="text-link">Register here.</a>
             </div>
         </form>
     </main>

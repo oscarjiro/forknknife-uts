@@ -1,4 +1,18 @@
 $(document).ready(() => {
+    setTimeout(() => $("#cartItemCount").removeClass("opacity-0"), 100);
+
+    $(window).scroll(() => {
+        const distance = $(window).scrollTop();
+        if (distance > 10) {
+            $(navbar).attr(
+                "class",
+                "border-b border-b-[rgb(var(--black-rgb))]"
+            );
+        } else {
+            $(navbar).attr("class", "");
+        }
+    });
+
     $(window).resize(() => {
         const width = $(window).width();
         if (width >= 850) {

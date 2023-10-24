@@ -74,4 +74,13 @@ define("ERROR", [
 
 // Routes
 define("UNAUTHENTICATED_ROUTES", ["login.php", "register.php", "forgot-password.php", "reset-password.php"]);
-define("API_ROUTES", ["delete_menu.php", "get_menu.php", "request_password_reset.php"]);
+define("API_ROUTES", [
+    "get_menu.php",
+    "delete_menu.php",
+    "get_order.php",
+    "order_menu.php",
+    "modify_order_menu.php",
+    "delete_order.php",
+    "confirm_order.php",
+    "request_password_reset.php",
+]);

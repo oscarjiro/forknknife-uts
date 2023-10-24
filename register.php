@@ -2,6 +2,8 @@
 
 require_once(__DIR__ . "/init.php");
 
+$param_next = isset($_GET["next"]) ? $_GET["next"] : null;
+
 $post_req = $_SERVER["REQUEST_METHOD"] === "POST";
 if ($post_req) {
     // Collect POST data
@@ -81,7 +83,7 @@ if ($post_req) {
                 $_SESSION["is_admin"] = $is_admin;
                 $_SESSION["username"] = $username;
                 $_SESSION["name"] = $select_result["name"];
-                header("Location: index.php");
+                header("Location: " . ($param_next ? $param_next : "index.php"));
             } catch (PDOException $e) {
                 $query_success = false;
                 $database_error = $e->getMessage();
@@ -108,7 +110,7 @@ if ($post_req) {
     <!-- Main -->
     <main class="form-main opacity-0">
         <!-- Form -->
-        <form id="registerForm" action="register.php" method="post">
+        <form id="registerForm" action="register.php<?= $param_next ? "?next=$param_next" : "" ?>" method="post">
             <!-- Heading -->
             <h1 class="form-header">
                 Sign up to get started.
@@ -209,7 +211,7 @@ if ($post_req) {
 
             <!-- Login redirect -->
             <div class="text-center">
-                Already have an account? <a href="login.php" class="text-link">Login here.</a>
+                Already have an account? <a href="login.php<?= $param_next ? "?next=$param_next" : "" ?>" class="text-link">Login here.</a>
             </div>
         </form>
     </main>

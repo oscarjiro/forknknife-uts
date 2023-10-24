@@ -40,14 +40,15 @@ function shopping_cart($class, $active, $exp = false)
     $count_bg_hover = !$exp ?  "group-hover:bg-[rgb(var(--fg-rgb))]" : "group-hover:bg-[rgb(var(--white-rgb))]";
     $count_color = !$exp ? "text-[rgb(var(--bg-rgb))]" : "text-[rgb(var(--fg-rgb))]";
     $count_id = "cartItemCount" . ($exp ? "Exp" : "");
+    $text_opacity = !$exp ? "opacity-0" : "";
 
     return "
         <a href=\"checkout.php\" class=\"relative cursor-pointer $text_color group smooth\">
             <svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\" class=\"$class smooth group-hover:-rotate-[15deg] $text_color_hover delay-0\">
                 <path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z\" />
             </svg>
-            <div id=\"$count_id\" class=\"flex items-center justify-center text-xs absolute top-[5px] left-[20px] p-2 w-[25px] h-[25px] min-w-[25px] min-h-[25px] $count_color $count_bg smooth $count_bg_hover rounded-full overflow-hidden\">
-                0
+            <div class=\"flex items-center justify-center text-xs absolute top-[5px] left-[20px] p-2 w-[25px] h-[25px] min-w-[25px] min-h-[25px] $count_color $count_bg smooth $count_bg_hover rounded-full overflow-hidden\">
+                <span id=\"$count_id\" class=\"$text_opacity smooth\">0</span>
             </div>
         </a>
   ";
@@ -68,7 +69,7 @@ function navbar($authenticated = true, $active = null, $is_admin = false)
             Add
         </a>";
     $admin_links_exp = "
-        <a href=\"add.php\" class=\"nav-link-exp " . ($active === "add" ? "text-active" : "") . "\">
+        <a href=\"add.php\" class=\"nav-link-exp " . ($active === "add" ? "text-[rgb(var(--bg-rgb))]" : "") . "\">
             Add
         </a>";
     $user_links = "
@@ -77,7 +78,7 @@ function navbar($authenticated = true, $active = null, $is_admin = false)
         </a>" .
         shopping_cart("w-6 h-6", $active === "checkout");
     $user_links_exp = "
-        <a href=\"history.php\" class=\"nav-link-exp " . ($active === "history" ? "text-active" : "") . "\">
+        <a href=\"history.php\" class=\"nav-link-exp " . ($active === "history" ? "text-[rgb(var(--bg-rgb))]" : "") . "\">
             History
         </a>" .
         shopping_cart("w-6 h-6", $active === "checkout", true);

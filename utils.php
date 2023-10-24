@@ -125,3 +125,11 @@ function check_date($date)
     // Compare the two dates
     return $inputDate >= $today;
 }
+
+// Convert to currency
+function to_currency($price)
+{
+    $formatted_price = number_format($price, 2, ',', '.');
+
+    return 'IDR ' . $formatted_price;
+}
