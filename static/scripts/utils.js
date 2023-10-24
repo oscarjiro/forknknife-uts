@@ -18,7 +18,6 @@ import {
     passwordToggleHide,
     passwordToggleVisible,
 } from "./components.js";
-import { getOrder } from "./api.js";
 
 /* STRING MANIPULATION */
 // Uppercase every first letter of a word

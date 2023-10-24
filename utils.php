@@ -89,43 +89,6 @@ function greet()
     return $greeting;
 }
 
-// Get current date
-function get_curdate()
-{
-    return date("Y-m-d");
-}
-
-// Get current day
-function get_curday()
-{
-    return date("l");
-}
-
-// Convert ISO 8601 to formatted date
-function convert_date($date)
-{
-    $date = strtotime($date);
-    return date("j F Y", $date);
-}
-
-// Check if todo date is valid
-function check_date($date)
-{
-    // Ensure in YYYY-MM-DD format
-    if (!preg_match(ISO_8601_DATE_REGEXP, $date)) return false;
-
-    // Create DateTime objects for the input date and today's date
-    $inputDate = new DateTime($date);
-    $today = new DateTime();
-
-    // Set both dates to midnight (00:00:00) to compare only the dates
-    $inputDate->setTime(0, 0, 0);
-    $today->setTime(0, 0, 0);
-
-    // Compare the two dates
-    return $inputDate >= $today;
-}
-
 // Convert to currency
 function to_currency($price)
 {
